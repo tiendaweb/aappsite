@@ -29,6 +29,23 @@ function esc($value): string {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+function resolve_image_url($image): string {
+    if (is_array($image)) {
+        $value = $image['value'] ?? $image['url'] ?? '';
+        return is_string($value) ? $value : '';
+    }
+
+    return is_string($image) ? $image : '';
+}
+
+function resolve_image_source_type($image): string {
+    if (is_array($image) && isset($image['source_type']) && is_string($image['source_type'])) {
+        return $image['source_type'];
+    }
+
+    return 'url';
+}
+
 $defaults = json_decode(file_get_contents(__DIR__ . '/data/content.seed.json') ?: '{}', true);
 $defaults = is_array($defaults) ? $defaults : [];
 
@@ -45,6 +62,35 @@ if (!is_array($stats) || $stats === []) {
 if (!is_array($obrasItems) || $obrasItems === []) {
     $obrasItems = content_get($defaults, 'tabs.obras.items', []);
 }
+
+$backgrounds = array_values(array_filter(array_map(static function ($background): array {
+    $url = '';
+    if (is_array($background)) {
+        $url = resolve_image_url($background['image'] ?? $background['url'] ?? []);
+    }
+
+    if ($url === '') {
+        return [];
+    }
+
+    return [
+        'source_type' => resolve_image_source_type($background['image'] ?? $background['url'] ?? []),
+        'value' => $url,
+    ];
+}, $backgrounds), static fn ($item) => $item !== []));
+
+$obrasItems = array_map(static function ($item): array {
+    if (!is_array($item)) {
+        return [];
+    }
+
+    $item['image'] = [
+        'source_type' => resolve_image_source_type($item['image'] ?? []),
+        'value' => resolve_image_url($item['image'] ?? []),
+    ];
+
+    return $item;
+}, $obrasItems);
 
 $initialContent = array_replace_recursive($defaults, $content);
 ?>
@@ -93,7 +139,7 @@ $initialContent = array_replace_recursive($defaults, $content);
 <body class="text-white selection:bg-art-neon selection:text-black" data-auth="<?= $isLoggedIn ? '1' : '0' ?>">
 <div id="bg-container" class="fixed inset-0 -z-10">
     <?php foreach ($backgrounds as $index => $background): ?>
-        <div class="bg-layer<?= $index === 0 ? ' active' : '' ?>" style="background-image: url('<?= esc($background['url'] ?? '') ?>')"></div>
+        <div class="bg-layer<?= $index === 0 ? ' active' : '' ?>" style="background-image: url('<?= esc($background['value'] ?? '') ?>')"></div>
     <?php endforeach; ?>
 </div>
 <div class="overlay"></div>
@@ -139,8 +185,8 @@ $initialContent = array_replace_recursive($defaults, $content);
                 </div>
             </div>
             <div class="relative group editable-wrapper">
-                <img src="<?= esc(content_get($initialContent, 'hero.featured_image.url', '')) ?>" data-edit-key="hero.featured_image.url" data-edit-type="image" class="rounded-3xl border border-white/10 shadow-2xl" alt="<?= esc(content_get($initialContent, 'hero.featured_image.alt', '')) ?>">
-                <span class="edit-icon" data-edit-target="hero.featured_image.url">✎</span>
+                <img src="<?= esc(resolve_image_url(content_get($initialContent, 'hero.featured_image', []))) ?>" data-edit-key="hero.featured_image" data-edit-type="image" data-source-type="<?= esc(resolve_image_source_type(content_get($initialContent, 'hero.featured_image', []))) ?>" class="rounded-3xl border border-white/10 shadow-2xl" alt="<?= esc(content_get($initialContent, 'hero.featured_image.alt', '')) ?>">
+                <span class="edit-icon" data-edit-target="hero.featured_image">✎</span>
             </div>
         </div>
     </div>
@@ -150,7 +196,7 @@ $initialContent = array_replace_recursive($defaults, $content);
         <div class="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
             <?php foreach ($obrasItems as $i => $item): ?>
                 <div class="glass p-4 rounded-3xl break-inside-avoid editable-wrapper">
-                    <img src="<?= esc($item['image'] ?? '') ?>" data-edit-key="tabs.obras.items[<?= $i ?>].image" data-edit-type="image" class="rounded-2xl w-full mb-4" alt="<?= esc($item['alt'] ?? '') ?>">
+                    <img src="<?= esc(resolve_image_url($item['image'] ?? [])) ?>" data-edit-key="tabs.obras.items[<?= $i ?>].image" data-edit-type="image" data-source-type="<?= esc(resolve_image_source_type($item['image'] ?? [])) ?>" class="rounded-2xl w-full mb-4" alt="<?= esc($item['alt'] ?? '') ?>">
                     <span class="edit-icon" data-edit-target="tabs.obras.items[<?= $i ?>].image">✎</span>
                     <h3 class="font-serif text-xl" data-edit-key="tabs.obras.items[<?= $i ?>].title" data-edit-type="text"><?= esc($item['title'] ?? '') ?></h3>
                     <p class="text-xs text-art-neon mb-2" data-edit-key="tabs.obras.items[<?= $i ?>].subtitle" data-edit-type="text"><?= esc($item['subtitle'] ?? '') ?></p>
@@ -176,8 +222,8 @@ $initialContent = array_replace_recursive($defaults, $content);
                 <button class="bg-art-neon text-black px-8 py-4 rounded-full font-bold self-start uppercase text-xs tracking-widest" data-edit-key="tabs.academia.button" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.academia.button', '')) ?></button>
             </div>
             <div class="flex-1 glass rounded-[3rem] overflow-hidden min-h-[400px] editable-wrapper">
-                <img src="<?= esc(content_get($initialContent, 'tabs.academia.image.url', '')) ?>" data-edit-key="tabs.academia.image.url" data-edit-type="image" class="w-full h-full object-cover opacity-50" alt="<?= esc(content_get($initialContent, 'tabs.academia.image.alt', '')) ?>">
-                <span class="edit-icon" data-edit-target="tabs.academia.image.url">✎</span>
+                <img src="<?= esc(resolve_image_url(content_get($initialContent, 'tabs.academia.image', []))) ?>" data-edit-key="tabs.academia.image" data-edit-type="image" data-source-type="<?= esc(resolve_image_source_type(content_get($initialContent, 'tabs.academia.image', []))) ?>" class="w-full h-full object-cover opacity-50" alt="<?= esc(content_get($initialContent, 'tabs.academia.image.alt', '')) ?>">
+                <span class="edit-icon" data-edit-target="tabs.academia.image">✎</span>
             </div>
         </div>
     </div>
@@ -239,6 +285,16 @@ const contentState = <?= json_encode($initialContent, JSON_UNESCAPED_UNICODE | J
 let editMode = false;
 let currentImageKey = '';
 let imageMode = 'url';
+
+function switchImageMode(mode) {
+    imageMode = mode === 'upload' ? 'upload' : 'url';
+    document.getElementById('urlPane').classList.toggle('hidden', imageMode !== 'url');
+    document.getElementById('uploadPane').classList.toggle('hidden', imageMode !== 'upload');
+    document.querySelectorAll('.modal-mode').forEach((btn) => {
+        btn.classList.toggle('bg-art-neon', btn.dataset.mode === imageMode);
+        btn.classList.toggle('text-black', btn.dataset.mode === imageMode);
+    });
+}
 
 function pathSegments(key) {
     return key.replace(/\[(\d+)\]/g, '.$1').split('.');
@@ -318,16 +374,14 @@ if (isAuthenticated) {
             document.getElementById('imageModal').classList.remove('hidden');
             document.getElementById('imageModal').classList.add('flex');
             document.getElementById('imageUrlInput').value = imageEl.getAttribute('src') || '';
+            document.getElementById('imageFileInput').value = '';
+            switchImageMode(imageEl.dataset.sourceType || 'url');
             document.getElementById('modalFeedback').textContent = '';
         });
     });
 
     document.querySelectorAll('.modal-mode').forEach((button) => {
-        button.addEventListener('click', () => {
-            imageMode = button.dataset.mode;
-            document.getElementById('urlPane').classList.toggle('hidden', imageMode !== 'url');
-            document.getElementById('uploadPane').classList.toggle('hidden', imageMode !== 'upload');
-        });
+        button.addEventListener('click', () => switchImageMode(button.dataset.mode));
     });
 
     document.getElementById('cancelModal').addEventListener('click', () => {
@@ -348,7 +402,8 @@ if (isAuthenticated) {
                 return;
             }
             imageEl.src = newUrl;
-            setByPath(contentState, currentImageKey, newUrl);
+            setByPath(contentState, currentImageKey, { source_type: 'url', value: newUrl });
+            imageEl.dataset.sourceType = 'url';
             try {
                 await persistContent([currentImageKey]);
                 feedback.textContent = 'Imagen actualizada.';
@@ -374,11 +429,10 @@ if (isAuthenticated) {
 
         imageEl.src = URL.createObjectURL(file);
         const form = new FormData();
-        form.append('action', 'upload-image');
         form.append('key', currentImageKey);
         form.append('image', file);
 
-        const response = await fetch('/api/save-content.php', { method: 'POST', body: form });
+        const response = await fetch('/api/upload-image.php', { method: 'POST', body: form });
         const result = await response.json();
         if (!response.ok || !result.ok) {
             feedback.textContent = result.error || 'No se pudo subir la imagen.';
@@ -387,7 +441,8 @@ if (isAuthenticated) {
         }
 
         imageEl.src = result.url;
-        setByPath(contentState, currentImageKey, result.url);
+        setByPath(contentState, currentImageKey, { source_type: 'upload', value: result.url });
+        imageEl.dataset.sourceType = 'upload';
         fieldMessage(currentImageKey, 'Imagen guardada', true);
         feedback.textContent = 'Imagen subida correctamente.';
         feedback.className = 'text-xs text-green-400';

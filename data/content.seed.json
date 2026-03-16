@@ -19,8 +19,9 @@
     "description": "Formada bajo la tutela de maestros como Alberto Bruzzone y Manlio Cecotti, Claudia ha transitado un camino de más de 200 exposiciones. Su obra, que oscila entre lo sacro y lo cotidiano, es un diálogo constante entre el óleo tradicional y la nueva era digital.",
     "description_emphasis": "Alberto Bruzzone y Manlio Cecotti",
     "featured_image": {
-      "url": "https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=800",
-      "alt": "Artist Work"
+      "alt": "Artist Work",
+      "source_type": "url",
+      "value": "https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=800"
     },
     "quote": "El arte es la interfaz entre el alma y el espectador"
   },
@@ -44,21 +45,30 @@
       "title_highlight": "Selecta",
       "items": [
         {
-          "image": "https://aapp.space/storage/images/609c03880ee47-69b1f265b0650.jpg",
+          "image": {
+            "source_type": "url",
+            "value": "https://aapp.space/storage/images/609c03880ee47-69b1f265b0650.jpg"
+          },
           "alt": "Virgen Desatanudos",
           "title": "Virgen Desatanudos",
           "subtitle": "Óleo sobre Lienzo - 1999",
           "description": "Una de sus obras más icónicas, presente en Mar del Plata y Santa Rosa."
         },
         {
-          "image": "https://aapp.space/storage/images/609c03880ee47-69b1f265a41fc.jpg",
+          "image": {
+            "source_type": "url",
+            "value": "https://aapp.space/storage/images/609c03880ee47-69b1f265a41fc.jpg"
+          },
           "alt": "Plenilunio",
           "title": "Plenilunio",
           "subtitle": "Acrílico Experimental",
           "description": "Valorada en el mercado internacional por su manejo de la luz nocturna."
         },
         {
-          "image": "https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?q=80&w=600",
+          "image": {
+            "source_type": "url",
+            "value": "https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?q=80&w=600"
+          },
           "alt": "Bodegón",
           "title": "El Sótano",
           "subtitle": "Clasicismo Argentino",
@@ -87,20 +97,30 @@
       "description": "Aprende los secretos del dibujo fisionómico de la mano de una experta. Clases online y presenciales para todos los niveles.",
       "button": "Inscribirme",
       "image": {
-        "url": "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=800",
-        "alt": "Sesión de dibujo artístico"
+        "alt": "Sesión de dibujo artístico",
+        "source_type": "url",
+        "value": "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=800"
       }
     }
   },
   "backgrounds": [
     {
-      "url": "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=2000"
+      "image": {
+        "source_type": "url",
+        "value": "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=2000"
+      }
     },
     {
-      "url": "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=2000"
+      "image": {
+        "source_type": "url",
+        "value": "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=2000"
+      }
     },
     {
-      "url": "https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?q=80&w=2000"
+      "image": {
+        "source_type": "url",
+        "value": "https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?q=80&w=2000"
+      }
     }
   ]
 }
