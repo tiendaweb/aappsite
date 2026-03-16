@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/content-repo.php';
 
 require_auth();
 
@@ -39,65 +40,6 @@ function validate_payload(array $data): bool
     return true;
 }
 
-function save_content_file(array $data): bool
-{
-    $target = __DIR__ . '/../data/content.json';
-    $tmp = $target . '.tmp.' . uniqid('', true);
-    $lockFile = $target . '.lock';
-    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-
-    if ($json === false) {
-        log_app_error('save-content: failed to encode JSON payload');
-        return false;
-    }
-
-    $lockHandle = @fopen($lockFile, 'c');
-    if ($lockHandle === false) {
-        log_app_error('save-content: failed to open lock file');
-        return false;
-    }
-
-    if (!flock($lockHandle, LOCK_EX)) {
-        fclose($lockHandle);
-        log_app_error('save-content: failed to acquire file lock');
-        return false;
-    }
-
-    $tmpHandle = @fopen($tmp, 'wb');
-    if ($tmpHandle === false) {
-        flock($lockHandle, LOCK_UN);
-        fclose($lockHandle);
-        log_app_error('save-content: failed to open temporary file');
-        return false;
-    }
-
-    $bytes = fwrite($tmpHandle, $json . PHP_EOL);
-    if ($bytes === false) {
-        fclose($tmpHandle);
-        @unlink($tmp);
-        flock($lockHandle, LOCK_UN);
-        fclose($lockHandle);
-        log_app_error('save-content: failed to write temporary file');
-        return false;
-    }
-
-    fflush($tmpHandle);
-    fclose($tmpHandle);
-
-    if (!@rename($tmp, $target)) {
-        @unlink($tmp);
-        flock($lockHandle, LOCK_UN);
-        fclose($lockHandle);
-        log_app_error('save-content: failed to move temporary file into place');
-        return false;
-    }
-
-    flock($lockHandle, LOCK_UN);
-    fclose($lockHandle);
-
-    return true;
-}
-
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
@@ -125,6 +67,7 @@ if (!validate_payload($data)) {
 }
 
 if (!save_content_file($data)) {
+    log_app_error('save-content: failed to persist content JSON');
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'No se pudo guardar']);
     exit;
