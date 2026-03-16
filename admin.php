@@ -158,6 +158,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+
+    if ($action === 'update_integrations') {
+        $domain = strtolower(trim((string) ($_POST['site_domain'] ?? '')));
+        $facebookPixelId = trim((string) ($_POST['facebook_pixel_id'] ?? ''));
+        $googleAnalyticsId = strtoupper(trim((string) ($_POST['google_analytics_id'] ?? '')));
+
+        if ($domain !== '') {
+            $domain = preg_replace('#^https?://#i', '', $domain) ?? $domain;
+            $domain = trim($domain, "/ \t\n\r\0\x0B");
+            if (preg_match('/^[a-z0-9.-]+$/', $domain) !== 1) {
+                $error = 'El dominio tiene un formato inválido.';
+            }
+        }
+
+        if ($error === '' && $facebookPixelId !== '' && preg_match('/^[0-9]{8,20}$/', $facebookPixelId) !== 1) {
+            $error = 'El Pixel de Facebook debe ser numérico.';
+        }
+
+        if ($error === '' && $googleAnalyticsId !== '' && preg_match('/^(G|UA)-[A-Z0-9\-]+$/', $googleAnalyticsId) !== 1) {
+            $error = 'El ID de Google Analytics debe ser tipo G-XXXX o UA-XXXX.';
+        }
+
+        if ($error === '') {
+            $content = read_content_file();
+            if ($content === []) {
+                $content = json_decode(file_get_contents(__DIR__ . '/data/content.seed.json') ?: '{}', true);
+                $content = is_array($content) ? $content : [];
+            }
+
+            $content['site']['domain'] = $domain;
+            $content['site']['integrations'] = [
+                'facebook_pixel_id' => $facebookPixelId,
+                'google_analytics_id' => $googleAnalyticsId,
+            ];
+
+            if (!save_content_file($content)) {
+                $error = 'No se pudieron guardar las integraciones.';
+            } else {
+                $status = 'Dominio e integraciones guardados.';
+            }
+        }
+    }
 }
 
 $content = read_content_file();
@@ -170,6 +212,9 @@ $seoTitle = admin_content_get($content, 'site.title', '');
 $seoDescription = admin_content_get($content, 'site.seo.description', '');
 $seoKeywords = admin_content_get($content, 'site.seo.keywords', '');
 $ogImage = admin_content_get($content, 'site.seo.og_image', '');
+$siteDomain = admin_content_get($content, 'site.domain', '');
+$facebookPixelId = admin_content_get($content, 'site.integrations.facebook_pixel_id', '');
+$googleAnalyticsId = admin_content_get($content, 'site.integrations.google_analytics_id', '');
 ?>
 <!doctype html>
 <html lang="es">
@@ -284,6 +329,27 @@ $ogImage = admin_content_get($content, 'site.seo.og_image', '');
                         <input type="url" name="og_image" value="<?= htmlspecialchars($ogImage, ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 focus:ring-2 focus:ring-cyan-300 outline-none">
                     </label>
                     <button class="rounded-xl bg-fuchsia-300 text-slate-900 font-semibold px-5 py-3 hover:bg-fuchsia-200">Guardar SEO</button>
+                </form>
+            </section>
+
+            <section class="glass rounded-3xl p-6 md:p-8">
+                <h2 class="text-xl font-semibold mb-5">Dominio e integraciones</h2>
+                <form method="post" class="space-y-4">
+                    <input type="hidden" name="action" value="update_integrations">
+                    <label class="block space-y-2">
+                        <span class="text-sm text-slate-300">Dominio personalizado</span>
+                        <input type="text" name="site_domain" placeholder="midominio.com" value="<?= htmlspecialchars($siteDomain, ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 focus:ring-2 focus:ring-cyan-300 outline-none">
+                        <span class="text-xs text-slate-400">Configura este dominio en DNS apuntando al hosting de esta app.</span>
+                    </label>
+                    <label class="block space-y-2">
+                        <span class="text-sm text-slate-300">Facebook Pixel ID</span>
+                        <input type="text" name="facebook_pixel_id" placeholder="123456789012345" value="<?= htmlspecialchars($facebookPixelId, ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 focus:ring-2 focus:ring-cyan-300 outline-none">
+                    </label>
+                    <label class="block space-y-2">
+                        <span class="text-sm text-slate-300">Google Analytics ID</span>
+                        <input type="text" name="google_analytics_id" placeholder="G-XXXXXXXXXX" value="<?= htmlspecialchars($googleAnalyticsId, ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 focus:ring-2 focus:ring-cyan-300 outline-none">
+                    </label>
+                    <button class="rounded-xl bg-lime-300 text-slate-900 font-semibold px-5 py-3 hover:bg-lime-200">Guardar integraciones</button>
                 </form>
             </section>
 
