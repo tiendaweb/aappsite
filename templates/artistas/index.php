@@ -1,0 +1,250 @@
+<?php
+
+declare(strict_types=1);
+
+$defaults = json_decode(file_get_contents(dirname(__DIR__, 2) . '/data/content.seed.json') ?: '{}', true);
+
+$defaults = is_array($defaults) ? $defaults : [];
+
+$backgrounds = content_get($content, 'backgrounds', content_get($defaults, 'backgrounds', []));
+$stats = content_get($content, 'stats', content_get($defaults, 'stats', []));
+$obrasItems = content_get($content, 'tabs.obras.items', content_get($defaults, 'tabs.obras.items', []));
+
+if (!is_array($backgrounds) || $backgrounds === []) {
+    $backgrounds = content_get($defaults, 'backgrounds', []);
+}
+if (!is_array($stats) || $stats === []) {
+    $stats = content_get($defaults, 'stats', []);
+}
+if (!is_array($obrasItems) || $obrasItems === []) {
+    $obrasItems = content_get($defaults, 'tabs.obras.items', []);
+}
+
+$backgrounds = array_values(array_filter(array_map(static function ($background): array {
+    $url = '';
+    if (is_array($background)) {
+        $url = resolve_image_url($background['image'] ?? $background['url'] ?? []);
+    }
+
+    if ($url === '') {
+        return [];
+    }
+
+    return [
+        'source_type' => resolve_image_source_type($background['image'] ?? $background['url'] ?? []),
+        'value' => $url,
+    ];
+}, $backgrounds), static fn ($item) => $item !== []));
+
+$obrasItems = array_map(static function ($item): array {
+    if (!is_array($item)) {
+        return [];
+    }
+
+    $item['image'] = [
+        'source_type' => resolve_image_source_type($item['image'] ?? []),
+        'value' => resolve_image_url($item['image'] ?? []),
+    ];
+
+    return $item;
+}, $obrasItems);
+
+$initialContent = array_replace_recursive($defaults, $content);
+?>
+<!DOCTYPE html>
+<html lang="<?= esc(content_get($initialContent, 'site.lang', 'es')) ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= esc(content_get($initialContent, 'site.title', 'Galería')) ?></title>
+    <meta name="description" content="<?= esc(content_get($initialContent, 'site.seo.description', content_get($initialContent, 'hero.description', ''))) ?>">
+    <meta name="keywords" content="<?= esc(content_get($initialContent, 'site.seo.keywords', '')) ?>">
+    <meta property="og:title" content="<?= esc(content_get($initialContent, 'site.title', 'Galería')) ?>">
+    <meta property="og:description" content="<?= esc(content_get($initialContent, 'site.seo.description', content_get($initialContent, 'hero.description', ''))) ?>">
+    <meta property="og:image" content="<?= esc(content_get($initialContent, 'site.seo.og_image', resolve_image_url(content_get($initialContent, 'hero.featured_image', [])))) ?>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: { art: { gold: '#C5A059', neon: '#00F2FF', deep: '#0A0A0B' } },
+                },
+            },
+        };
+    </script>
+    <style>
+        :root { --blur: 20px; }
+        body { margin: 0; overflow-x: hidden; background: #000; font-family: 'Inter', sans-serif; }
+        .bg-layer { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity 2.5s ease-in-out; }
+        .bg-layer.active { opacity: 0.6; }
+        .overlay { position: fixed; inset: 0; background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.85) 100%); z-index: -1; }
+        .glass { background: rgba(255,255,255,.03); backdrop-filter: blur(var(--blur)); border: 1px solid rgba(255,255,255,.08); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: slideUp .8s ease forwards; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .nav-btn.active { background: rgba(255,255,255,.1); color: #00F2FF; }
+        .editable-wrapper { position: relative; }
+        .edit-icon { display: none; position: absolute; top: -.5rem; right: -.5rem; border-radius: 9999px; background: #00F2FF; color: black; font-size: .75rem; width: 1.5rem; height: 1.5rem; align-items: center; justify-content: center; cursor: pointer; }
+        body.edit-mode [data-edit-key] { outline: 1px dashed rgba(0,242,255,.45); outline-offset: 4px; border-radius: .2rem; }
+        body.edit-mode [data-edit-key][data-edit-type="text"] { cursor: text; }
+        body.edit-mode .edit-icon { display: inline-flex; }
+        .field-message { display:none; font-size:.7rem; margin-top:.3rem; }
+        .field-message.ok { color: #34d399; display:block; }
+        .field-message.error { color: #f87171; display:block; }
+    </style>
+</head>
+<body class="text-white selection:bg-art-neon selection:text-black" data-auth="<?= $isLoggedIn ? '1' : '0' ?>">
+<div id="bg-container" class="fixed inset-0 -z-10">
+    <?php foreach ($backgrounds as $index => $background): ?>
+        <div class="bg-layer<?= $index === 0 ? ' active' : '' ?>" style="background-image: url('<?= esc($background['value'] ?? '') ?>')"></div>
+    <?php endforeach; ?>
+</div>
+<div class="overlay"></div>
+
+<?php if ($isLoggedIn): ?>
+    <div class="fixed top-4 right-4 z-50 flex gap-2">
+        <button id="toggleEditBtn" class="bg-white/80 text-black px-4 py-2 rounded-full text-xs font-bold">✏️ Editar</button>
+        <button id="saveContentBtn" class="hidden bg-art-neon text-black px-4 py-2 rounded-full text-xs font-bold">Guardar cambios</button>
+    </div>
+<?php endif; ?>
+
+<header class="p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div class="space-y-1 editable-wrapper">
+        <h1 class="font-serif text-4xl md:text-6xl tracking-tighter" data-edit-key="site.name" data-edit-type="text"><?= esc(content_get($initialContent, 'site.name', '')) ?></h1>
+        <span class="edit-icon" data-edit-target="site.name">✎</span>
+        <p class="text-art-neon uppercase tracking-[0.3em] text-xs" data-edit-key="site.tagline" data-edit-type="text"><?= esc(content_get($initialContent, 'site.tagline', '')) ?></p>
+        <span class="field-message" data-message-for="site.name"></span>
+    </div>
+    <div class="glass px-6 py-3 rounded-full flex items-center gap-4 editable-wrapper">
+        <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+        <span class="text-[10px] uppercase tracking-widest opacity-70" data-edit-key="site.availability" data-edit-type="text"><?= esc(content_get($initialContent, 'site.availability', '')) ?></span>
+        <span class="edit-icon" data-edit-target="site.availability">✎</span>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-6 pb-32">
+    <div id="inicio" class="tab-content active">
+        <div class="grid lg:grid-cols-2 gap-12 items-center min-h-[60vh]">
+            <div class="space-y-8">
+                <h2 class="font-serif text-5xl md:text-7xl leading-tight">
+                    <span data-edit-key="hero.headline_prefix" data-edit-type="text"><?= esc(content_get($initialContent, 'hero.headline_prefix', '')) ?></span>
+                    <span class="italic text-art-gold" data-edit-key="hero.headline_highlight" data-edit-type="text"><?= esc(content_get($initialContent, 'hero.headline_highlight', '')) ?></span>
+                    <span data-edit-key="hero.headline_suffix" data-edit-type="text"><?= esc(content_get($initialContent, 'hero.headline_suffix', '')) ?></span>
+                </h2>
+                <p class="text-lg text-gray-300 leading-relaxed font-light" data-edit-key="hero.description" data-edit-type="text"><?= esc(content_get($initialContent, 'hero.description', '')) ?></p>
+                <div class="flex gap-4">
+                    <?php foreach ($stats as $i => $stat): ?>
+                        <div class="glass p-6 rounded-2xl flex-1">
+                            <h3 class="text-art-neon text-2xl font-serif" data-edit-key="stats[<?= $i ?>].value" data-edit-type="text"><?= esc($stat['value'] ?? '') ?></h3>
+                            <p class="text-xs uppercase tracking-tighter opacity-50" data-edit-key="stats[<?= $i ?>].label" data-edit-type="text"><?= esc($stat['label'] ?? '') ?></p>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <div class="relative group editable-wrapper">
+                <img src="<?= esc(resolve_image_url(content_get($initialContent, 'hero.featured_image', []))) ?>" data-edit-key="hero.featured_image" data-edit-type="image" data-source-type="<?= esc(resolve_image_source_type(content_get($initialContent, 'hero.featured_image', []))) ?>" class="rounded-3xl border border-white/10 shadow-2xl" alt="<?= esc(content_get($initialContent, 'hero.featured_image.alt', '')) ?>">
+                <span class="edit-icon" data-edit-target="hero.featured_image">✎</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="obras" class="tab-content">
+        <h2 class="font-serif text-4xl mb-12"><span data-edit-key="tabs.obras.title_prefix" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.obras.title_prefix', '')) ?></span> <span class="italic" data-edit-key="tabs.obras.title_highlight" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.obras.title_highlight', '')) ?></span></h2>
+        <div class="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+            <?php foreach ($obrasItems as $i => $item): ?>
+                <div class="glass p-4 rounded-3xl break-inside-avoid editable-wrapper">
+                    <img src="<?= esc(resolve_image_url($item['image'] ?? [])) ?>" data-edit-key="tabs.obras.items[<?= $i ?>].image" data-edit-type="image" data-source-type="<?= esc(resolve_image_source_type($item['image'] ?? [])) ?>" class="rounded-2xl w-full mb-4" alt="<?= esc($item['alt'] ?? '') ?>">
+                    <span class="edit-icon" data-edit-target="tabs.obras.items[<?= $i ?>].image">✎</span>
+                    <h3 class="font-serif text-xl" data-edit-key="tabs.obras.items[<?= $i ?>].title" data-edit-type="text"><?= esc($item['title'] ?? '') ?></h3>
+                    <p class="text-xs text-art-neon mb-2" data-edit-key="tabs.obras.items[<?= $i ?>].subtitle" data-edit-type="text"><?= esc($item['subtitle'] ?? '') ?></p>
+                    <p class="text-sm opacity-60" data-edit-key="tabs.obras.items[<?= $i ?>].description" data-edit-type="text"><?= esc($item['description'] ?? '') ?></p>
+                    <span class="field-message" data-message-for="tabs.obras.items[<?= $i ?>].title"></span>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <div id="mercado" class="tab-content">
+        <div class="glass p-12 rounded-[3rem] text-center space-y-6">
+            <h2 class="font-serif text-5xl"><span data-edit-key="tabs.mercado.title_prefix" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.mercado.title_prefix', '')) ?></span> <span class="italic" data-edit-key="tabs.mercado.title_highlight" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.mercado.title_highlight', '')) ?></span></h2>
+            <p class="max-w-2xl mx-auto opacity-70" data-edit-key="tabs.mercado.description" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.mercado.description', '')) ?></p>
+        </div>
+    </div>
+
+    <div id="academia" class="tab-content">
+        <div class="flex flex-col lg:flex-row gap-8 items-stretch">
+            <div class="glass p-10 rounded-[3rem] flex-1 space-y-6 flex flex-col justify-center">
+                <h2 class="font-serif text-5xl"><span data-edit-key="tabs.academia.title_prefix" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.academia.title_prefix', '')) ?></span> <span class="text-art-neon italic" data-edit-key="tabs.academia.title_highlight" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.academia.title_highlight', '')) ?></span></h2>
+                <p class="opacity-70" data-edit-key="tabs.academia.description" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.academia.description', '')) ?></p>
+                <button class="bg-art-neon text-black px-8 py-4 rounded-full font-bold self-start uppercase text-xs tracking-widest" data-edit-key="tabs.academia.button" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.academia.button', '')) ?></button>
+            </div>
+            <div class="flex-1 glass rounded-[3rem] overflow-hidden min-h-[400px] editable-wrapper">
+                <img src="<?= esc(resolve_image_url(content_get($initialContent, 'tabs.academia.image', []))) ?>" data-edit-key="tabs.academia.image" data-edit-type="image" data-source-type="<?= esc(resolve_image_source_type(content_get($initialContent, 'tabs.academia.image', []))) ?>" class="w-full h-full object-cover opacity-50" alt="<?= esc(content_get($initialContent, 'tabs.academia.image.alt', '')) ?>">
+                <span class="edit-icon" data-edit-target="tabs.academia.image">✎</span>
+            </div>
+        </div>
+    </div>
+</main>
+
+<nav class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+    <div class="glass px-4 py-3 rounded-full flex gap-2 border-white/20">
+        <button onclick="showTab('inicio')" data-tab="inicio" class="nav-btn active px-6 py-2 rounded-full text-[10px] font-bold uppercase" data-edit-key="site.nav.inicio" data-edit-type="text"><?= esc(content_get($initialContent, 'site.nav.inicio', 'Bio')) ?></button>
+        <button onclick="showTab('obras')" data-tab="obras" class="nav-btn px-6 py-2 rounded-full text-[10px] font-bold uppercase" data-edit-key="site.nav.obras" data-edit-type="text"><?= esc(content_get($initialContent, 'site.nav.obras', 'Obras')) ?></button>
+        <button onclick="showTab('mercado')" data-tab="mercado" class="nav-btn px-6 py-2 rounded-full text-[10px] font-bold uppercase" data-edit-key="site.nav.mercado" data-edit-type="text"><?= esc(content_get($initialContent, 'site.nav.mercado', 'Mercado')) ?></button>
+        <button onclick="showTab('academia')" data-tab="academia" class="nav-btn px-6 py-2 rounded-full text-[10px] font-bold uppercase" data-edit-key="site.nav.academia" data-edit-type="text"><?= esc(content_get($initialContent, 'site.nav.academia', 'Academia')) ?></button>
+    </div>
+</nav>
+
+<div id="imageModal" class="hidden fixed inset-0 bg-black/70 z-[100] items-center justify-center px-4">
+    <div class="glass rounded-2xl p-6 max-w-xl w-full space-y-4">
+        <h3 class="font-serif text-2xl">Editar imagen</h3>
+        <div class="flex gap-2 text-sm">
+            <button type="button" data-mode="url" class="modal-mode bg-white/10 px-3 py-2 rounded">URL</button>
+            <button type="button" data-mode="upload" class="modal-mode bg-white/10 px-3 py-2 rounded">Subir archivo</button>
+            <button type="button" data-mode="library" class="modal-mode bg-white/10 px-3 py-2 rounded">Biblioteca</button>
+        </div>
+        <div id="urlPane" class="space-y-2">
+            <label class="block text-xs">URL de imagen</label>
+            <input id="imageUrlInput" type="url" class="w-full text-black px-3 py-2 rounded" placeholder="https://...">
+        </div>
+        <div id="uploadPane" class="hidden space-y-2">
+            <label class="block text-xs">Archivo (jpg/png/webp, máx 5MB)</label>
+            <div id="uploadDropzone" class="border border-dashed border-white/40 rounded-lg p-6 text-center text-sm text-white/80 cursor-pointer transition hover:border-art-neon hover:text-art-neon" role="button" tabindex="0">
+                Arrastra tu imagen aquí o haz click
+            </div>
+            <input id="imageFileInput" type="file" accept="image/png,image/jpeg,image/webp" class="w-full text-xs">
+            <p id="uploadFileInfo" class="text-xs text-white/70"></p>
+        </div>
+        <div id="libraryPane" class="hidden space-y-3">
+            <p id="libraryStatus" class="text-xs text-white/70">Explora y selecciona una imagen.</p>
+            <div id="libraryGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1"></div>
+            <div class="flex justify-end">
+                <button id="confirmLibrarySelection" type="button" class="px-4 py-2 rounded bg-art-neon text-black font-bold">Usar imagen seleccionada</button>
+            </div>
+        </div>
+        <p id="modalFeedback" class="text-xs"></p>
+        <div class="flex justify-end gap-2">
+            <button id="cancelModal" class="px-4 py-2 rounded bg-white/10">Cancelar</button>
+            <button id="saveModal" class="px-4 py-2 rounded bg-art-neon text-black font-bold">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+window.APP_IS_AUTHENTICATED = document.body.dataset.auth === '1';
+window.APP_CONTENT_STATE = <?= json_encode($initialContent, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+window.ADMIN_EDITOR_ENDPOINTS = {
+    saveContent: <?= json_encode(url_for('/api/save-content.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+    uploadImage: <?= json_encode(url_for('/api/upload-image.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+    listImages: <?= json_encode(url_for('/api/list-images.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+};
+</script>
+<script src="<?= esc(url_for('/public/js/admin-editor.js')) ?>"></script>
+
+</body>
+</html>

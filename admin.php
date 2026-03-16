@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/url.php';
 require_once __DIR__ . '/includes/content-repo.php';
+require_once __DIR__ . '/includes/template-manager.php';
 
 require_auth();
 $user = current_user();
@@ -66,6 +67,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+
+    if ($action === 'update_template') {
+        $selectedTemplate = trim((string) ($_POST['site_template'] ?? ''));
+        $availableTemplates = list_available_templates();
+
+        if ($selectedTemplate === '' || !in_array($selectedTemplate, $availableTemplates, true)) {
+            $error = 'La plantilla seleccionada no es válida.';
+        } else {
+            $content = read_content_file();
+            if ($content === []) {
+                $content = json_decode(file_get_contents(__DIR__ . '/data/content.seed.json') ?: '{}', true);
+                $content = is_array($content) ? $content : [];
+            }
+
+            $content['site']['template'] = $selectedTemplate;
+
+            if (!save_content_file($content)) {
+                $error = 'No se pudo guardar la plantilla activa.';
+            } else {
+                $status = 'Plantilla activa actualizada.';
+            }
+        }
+    }
     if ($action === 'update_seo') {
         $seoTitle = trim((string) ($_POST['seo_title'] ?? ''));
         $seoDescription = trim((string) ($_POST['seo_description'] ?? ''));
@@ -98,6 +122,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $content = read_content_file();
+$availableTemplates = list_available_templates();
+$activeTemplate = admin_content_get($content, 'site.template', 'artistas');
+if (!in_array($activeTemplate, $availableTemplates, true)) {
+    $activeTemplate = 'artistas';
+}
 $seoTitle = admin_content_get($content, 'site.title', '');
 $seoDescription = admin_content_get($content, 'site.seo.description', '');
 $seoKeywords = admin_content_get($content, 'site.seo.keywords', '');
@@ -153,6 +182,25 @@ $ogImage = admin_content_get($content, 'site.seo.og_image', '');
                         <input type="password" name="confirm_password" required class="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 focus:ring-2 focus:ring-cyan-300 outline-none">
                     </label>
                     <button class="rounded-xl bg-cyan-300 text-slate-900 font-semibold px-5 py-3 hover:bg-cyan-200">Actualizar contraseña</button>
+                </form>
+            </section>
+
+
+            <section class="glass rounded-3xl p-6 md:p-8">
+                <h2 class="text-xl font-semibold mb-5">Plantilla activa</h2>
+                <form method="post" class="space-y-4">
+                    <input type="hidden" name="action" value="update_template">
+                    <label class="block space-y-2">
+                        <span class="text-sm text-slate-300">Seleccionar plantilla</span>
+                        <select name="site_template" class="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 focus:ring-2 focus:ring-cyan-300 outline-none" required>
+                            <?php foreach ($availableTemplates as $templateSlug): ?>
+                                <option value="<?= htmlspecialchars($templateSlug, ENT_QUOTES, 'UTF-8') ?>" <?= $templateSlug === $activeTemplate ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars(ucfirst($templateSlug), ENT_QUOTES, 'UTF-8') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <button class="rounded-xl bg-amber-300 text-slate-900 font-semibold px-5 py-3 hover:bg-amber-200">Guardar plantilla</button>
                 </form>
             </section>
 
