@@ -99,6 +99,11 @@ $initialContent = array_replace_recursive($defaults, $content);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= esc(content_get($initialContent, 'site.title', 'Galería')) ?></title>
+    <meta name="description" content="<?= esc(content_get($initialContent, 'site.seo.description', content_get($initialContent, 'hero.description', ''))) ?>">
+    <meta name="keywords" content="<?= esc(content_get($initialContent, 'site.seo.keywords', '')) ?>">
+    <meta property="og:title" content="<?= esc(content_get($initialContent, 'site.title', 'Galería')) ?>">
+    <meta property="og:description" content="<?= esc(content_get($initialContent, 'site.seo.description', content_get($initialContent, 'hero.description', ''))) ?>">
+    <meta property="og:image" content="<?= esc(content_get($initialContent, 'site.seo.og_image', resolve_image_url(content_get($initialContent, 'hero.featured_image', [])))) ?>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <script>
