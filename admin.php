@@ -90,6 +90,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+
+    if ($action === 'delete_template') {
+        $templateToDelete = trim((string) ($_POST['delete_template_slug'] ?? ''));
+        $availableTemplates = list_available_templates();
+
+        if ($templateToDelete === '' || !in_array($templateToDelete, $availableTemplates, true)) {
+            $error = 'La plantilla a borrar no es válida.';
+        } elseif (count($availableTemplates) <= 1) {
+            $error = 'No se puede borrar la única plantilla disponible.';
+        } else {
+            $content = read_content_file();
+            if ($content === []) {
+                $content = json_decode(file_get_contents(__DIR__ . '/data/content.seed.json') ?: '{}', true);
+                $content = is_array($content) ? $content : [];
+            }
+
+            if (!delete_template_directory($templateToDelete)) {
+                $error = 'No se pudo borrar el directorio de la plantilla.';
+            } elseif (!unregister_template_slug($templateToDelete)) {
+                $error = 'No se pudo actualizar el índice de plantillas.';
+            } else {
+                $remainingTemplates = list_available_templates();
+                if ($remainingTemplates === []) {
+                    $error = 'No quedó ninguna plantilla disponible tras borrar.';
+                } else {
+                    $activeTemplate = admin_content_get($content, 'site.template', 'artistas');
+                    if ($activeTemplate === $templateToDelete || !in_array($activeTemplate, $remainingTemplates, true)) {
+                        $content['site']['template'] = $remainingTemplates[0];
+                    }
+
+                    if (!save_content_file($content)) {
+                        $error = 'La plantilla se borró, pero no se pudo actualizar la plantilla activa.';
+                    } else {
+                        $status = 'Plantilla borrada correctamente.';
+                    }
+                }
+            }
+        }
+    }
     if ($action === 'update_seo') {
         $seoTitle = trim((string) ($_POST['seo_title'] ?? ''));
         $seoDescription = trim((string) ($_POST['seo_description'] ?? ''));
@@ -202,6 +241,26 @@ $ogImage = admin_content_get($content, 'site.seo.og_image', '');
                     </label>
                     <button class="rounded-xl bg-amber-300 text-slate-900 font-semibold px-5 py-3 hover:bg-amber-200">Guardar plantilla</button>
                 </form>
+
+                <div class="mt-6 space-y-3">
+                    <p class="text-sm text-slate-300">Borrar plantilla (si solo hay una, no se puede borrar)</p>
+                    <?php foreach ($availableTemplates as $templateSlug): ?>
+                        <?php $canDelete = count($availableTemplates) > 1; ?>
+                        <form method="post" class="flex items-center justify-between gap-3 rounded-xl border border-white/15 bg-slate-900/40 p-3">
+                            <input type="hidden" name="action" value="delete_template">
+                            <input type="hidden" name="delete_template_slug" value="<?= htmlspecialchars($templateSlug, ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="text-sm">
+                                <p class="font-semibold text-slate-100"><?= htmlspecialchars($templateSlug, ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php if ($templateSlug === $activeTemplate): ?>
+                                    <p class="text-xs text-cyan-200">Activa</p>
+                                <?php endif; ?>
+                            </div>
+                            <button class="rounded-lg px-3 py-2 font-semibold <?= $canDelete ? 'bg-red-300 text-slate-900 hover:bg-red-200' : 'bg-slate-700 text-slate-300 cursor-not-allowed' ?>" <?= $canDelete ? '' : 'disabled' ?>>
+                                Borrar
+                            </button>
+                        </form>
+                    <?php endforeach; ?>
+                </div>
             </section>
 
             <section class="glass rounded-3xl p-6 md:p-8">

@@ -68,6 +68,54 @@ function register_template_slug(string $slug): bool
     return save_template_registry($registry);
 }
 
+function unregister_template_slug(string $slug): bool
+{
+    if (!is_valid_template_slug($slug)) {
+        return false;
+    }
+
+    $registry = array_values(array_filter(
+        read_template_registry(),
+        static fn (string $registeredSlug): bool => $registeredSlug !== $slug
+    ));
+
+    return save_template_registry($registry);
+}
+
+function delete_template_directory(string $slug): bool
+{
+    if (!is_valid_template_slug($slug)) {
+        return false;
+    }
+
+    $directory = templates_dir_path() . '/' . $slug;
+    if (!is_dir($directory)) {
+        return true;
+    }
+
+    $entries = scandir($directory);
+    if ($entries === false) {
+        return false;
+    }
+
+    foreach ($entries as $entry) {
+        if ($entry === '.' || $entry === '..') {
+            continue;
+        }
+
+        $path = $directory . '/' . $entry;
+        if (is_dir($path)) {
+            return false;
+        }
+
+        if (!unlink($path)) {
+            return false;
+        }
+    }
+
+    return rmdir($directory);
+}
+
 function list_available_templates(): array
 {
     $templatesDir = templates_dir_path();
