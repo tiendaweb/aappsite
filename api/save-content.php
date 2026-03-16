@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/auth.php';
-require_once __DIR__ . '/../includes/content-repo.php';
 
 require_auth();
 
@@ -23,7 +22,7 @@ function log_app_error(string $message): void
 
 function validate_payload(array $data): bool
 {
-    $required = [
+    $requiredTopLevel = [
         'site' => 'array',
         'hero' => 'array',
         'stats' => 'array',
@@ -31,11 +30,95 @@ function validate_payload(array $data): bool
         'backgrounds' => 'array',
     ];
 
-    foreach ($required as $key => $type) {
+    foreach ($requiredTopLevel as $key => $type) {
         if (!array_key_exists($key, $data) || gettype($data[$key]) !== $type) {
             return false;
         }
     }
+
+    $requiredSite = [
+        'lang' => 'string',
+        'title' => 'string',
+        'name' => 'string',
+        'tagline' => 'string',
+        'availability' => 'string',
+        'nav' => 'array',
+    ];
+
+    foreach ($requiredSite as $key => $type) {
+        if (!array_key_exists($key, $data['site']) || gettype($data['site'][$key]) !== $type) {
+            return false;
+        }
+    }
+
+    $requiredHero = [
+        'headline_prefix' => 'string',
+        'headline_highlight' => 'string',
+        'headline_suffix' => 'string',
+        'description' => 'string',
+        'description_emphasis' => 'string',
+        'featured_image' => 'array',
+        'quote' => 'string',
+    ];
+
+    foreach ($requiredHero as $key => $type) {
+        if (!array_key_exists($key, $data['hero']) || gettype($data['hero'][$key]) !== $type) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function save_content_atomically(array $data): bool
+{
+    $target = __DIR__ . '/../data/content.json';
+    $tmp = $target . '.tmp.' . uniqid('', true);
+    $lockFile = $target . '.lock';
+
+    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    if ($json === false) {
+        return false;
+    }
+
+    $lockHandle = @fopen($lockFile, 'c');
+    if ($lockHandle === false) {
+        return false;
+    }
+
+    if (!flock($lockHandle, LOCK_EX)) {
+        fclose($lockHandle);
+        return false;
+    }
+
+    $tmpHandle = @fopen($tmp, 'wb');
+    if ($tmpHandle === false) {
+        flock($lockHandle, LOCK_UN);
+        fclose($lockHandle);
+        return false;
+    }
+
+    $bytes = fwrite($tmpHandle, $json . PHP_EOL);
+    if ($bytes === false) {
+        fclose($tmpHandle);
+        @unlink($tmp);
+        flock($lockHandle, LOCK_UN);
+        fclose($lockHandle);
+        return false;
+    }
+
+    fflush($tmpHandle);
+    fclose($tmpHandle);
+
+    if (!@rename($tmp, $target)) {
+        @unlink($tmp);
+        flock($lockHandle, LOCK_UN);
+        fclose($lockHandle);
+        return false;
+    }
+
+    flock($lockHandle, LOCK_UN);
+    fclose($lockHandle);
 
     return true;
 }
@@ -53,8 +136,16 @@ if ($payload === false) {
     exit;
 }
 
-$data = json_decode($payload, true);
-if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+try {
+    $data = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
+} catch (JsonException $exception) {
+    log_app_error('save-content: invalid JSON payload (' . $exception->getCode() . ')');
+    http_response_code(400);
+    echo json_encode(['ok' => false, 'error' => 'JSON inválido']);
+    exit;
+}
+
+if (!is_array($data)) {
     http_response_code(400);
     echo json_encode(['ok' => false, 'error' => 'JSON inválido']);
     exit;
@@ -66,8 +157,8 @@ if (!validate_payload($data)) {
     exit;
 }
 
-if (!save_content_file($data)) {
-    log_app_error('save-content: failed to persist content JSON');
+if (!save_content_atomically($data)) {
+    log_app_error('save-content: failed to persist content JSON atomically');
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'No se pudo guardar']);
     exit;
