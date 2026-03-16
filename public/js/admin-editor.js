@@ -21,11 +21,118 @@ const contentState = window.APP_CONTENT_STATE || {};
 let editMode = false;
 let currentImageKey = '';
 let imageMode = 'url';
+let libraryLoading = false;
+let selectedLibraryUrl = '';
+
+function normalizeImageUrl(url) {
+    if (!url) return '';
+    if (/^https?:\/\//i.test(url)) return url;
+    try {
+        return new URL(url, window.location.origin).toString();
+    } catch (_) {
+        return url;
+    }
+}
+
+function renderLibrary(images = [], selectedUrl = '') {
+    const grid = document.getElementById('libraryGrid');
+    const normalizedSelectedUrl = normalizeImageUrl(selectedUrl);
+    grid.innerHTML = '';
+
+    images.forEach((image) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.url = image.url;
+        button.className = 'border border-white/20 rounded-lg overflow-hidden bg-white/5 transition hover:border-art-neon';
+
+        const thumb = document.createElement('img');
+        thumb.src = image.url;
+        thumb.alt = image.name || 'Imagen subida';
+        thumb.className = 'w-full h-24 object-cover block';
+
+        const name = document.createElement('span');
+        name.className = 'block text-[10px] p-2 truncate text-left';
+        name.textContent = image.name || image.url;
+
+        button.appendChild(thumb);
+        button.appendChild(name);
+        button.addEventListener('click', () => {
+            selectedLibraryUrl = image.url;
+            grid.querySelectorAll('[data-url]').forEach((candidate) => {
+                candidate.classList.remove('ring-2', 'ring-art-neon');
+            });
+            button.classList.add('ring-2', 'ring-art-neon');
+        });
+
+        if (normalizeImageUrl(image.url) === normalizedSelectedUrl) {
+            selectedLibraryUrl = image.url;
+            button.classList.add('ring-2', 'ring-art-neon');
+        }
+
+        grid.appendChild(button);
+    });
+}
+
+async function loadImageLibrary(currentSrc = '') {
+    if (libraryLoading) return;
+    libraryLoading = true;
+    const status = document.getElementById('libraryStatus');
+    status.textContent = 'Cargando imágenes...';
+    status.className = 'text-xs text-white/70';
+
+    try {
+        const response = await fetch(window.ADMIN_EDITOR_ENDPOINTS.listImages, { method: 'GET' });
+        const result = await response.json();
+        if (!response.ok || !result.ok || !Array.isArray(result.images)) {
+            throw new Error(result.error || 'No se pudo cargar la biblioteca.');
+        }
+
+        renderLibrary(result.images, currentSrc);
+        if (result.images.length === 0) {
+            status.textContent = 'No hay imágenes subidas todavía.';
+            status.className = 'text-xs text-yellow-300';
+        } else {
+            status.textContent = 'Selecciona una imagen de la biblioteca.';
+            status.className = 'text-xs text-white/70';
+        }
+    } catch (error) {
+        status.textContent = error.message || 'Error cargando la biblioteca.';
+        status.className = 'text-xs text-red-400';
+        document.getElementById('libraryGrid').innerHTML = '';
+    } finally {
+        libraryLoading = false;
+    }
+}
+
+async function applyLibrarySelection() {
+    const feedback = document.getElementById('modalFeedback');
+    const imageEl = document.querySelector(`[data-edit-key="${currentImageKey}"][data-edit-type="image"]`);
+    if (!imageEl) return;
+    if (!selectedLibraryUrl) {
+        feedback.textContent = 'Selecciona una imagen de la biblioteca.';
+        feedback.className = 'text-xs text-red-400';
+        return;
+    }
+
+    imageEl.src = selectedLibraryUrl;
+    setByPath(contentState, currentImageKey, { source_type: 'upload', value: selectedLibraryUrl });
+    imageEl.dataset.sourceType = 'upload';
+
+    try {
+        await persistContent([currentImageKey]);
+        feedback.textContent = 'Imagen actualizada desde biblioteca.';
+        feedback.className = 'text-xs text-green-400';
+    } catch (e) {
+        feedback.textContent = e.message;
+        feedback.className = 'text-xs text-red-400';
+    }
+}
 
 function switchImageMode(mode) {
-    imageMode = mode === 'upload' ? 'upload' : 'url';
+    imageMode = mode === 'upload' || mode === 'library' ? mode : 'url';
     document.getElementById('urlPane').classList.toggle('hidden', imageMode !== 'url');
     document.getElementById('uploadPane').classList.toggle('hidden', imageMode !== 'upload');
+    document.getElementById('libraryPane').classList.toggle('hidden', imageMode !== 'library');
     document.querySelectorAll('.modal-mode').forEach((btn) => {
         btn.classList.toggle('bg-art-neon', btn.dataset.mode === imageMode);
         btn.classList.toggle('text-black', btn.dataset.mode === imageMode);
@@ -118,13 +225,30 @@ if (isAuthenticated) {
             document.getElementById('imageModal').classList.add('flex');
             document.getElementById('imageUrlInput').value = imageEl.getAttribute('src') || '';
             document.getElementById('imageFileInput').value = '';
+            selectedLibraryUrl = '';
             switchImageMode(imageEl.dataset.sourceType || 'url');
             document.getElementById('modalFeedback').textContent = '';
+
+            if (imageEl.dataset.sourceType === 'upload') {
+                switchImageMode('library');
+                loadImageLibrary(imageEl.getAttribute('src') || '');
+            }
         });
     });
 
     document.querySelectorAll('.modal-mode').forEach((button) => {
-        button.addEventListener('click', () => switchImageMode(button.dataset.mode));
+        button.addEventListener('click', () => {
+            switchImageMode(button.dataset.mode);
+            if (button.dataset.mode === 'library') {
+                const imageEl = document.querySelector(`[data-edit-key="${currentImageKey}"][data-edit-type="image"]`);
+                loadImageLibrary(imageEl ? (imageEl.getAttribute('src') || '') : '');
+            }
+        });
+    });
+
+    document.getElementById('confirmLibrarySelection').addEventListener('click', async () => {
+        if (imageMode !== 'library') return;
+        await applyLibrarySelection();
     });
 
     document.getElementById('cancelModal').addEventListener('click', () => {
@@ -155,6 +279,11 @@ if (isAuthenticated) {
                 feedback.textContent = e.message;
                 feedback.className = 'text-xs text-red-400';
             }
+            return;
+        }
+
+        if (imageMode === 'library') {
+            await applyLibrarySelection();
             return;
         }
 

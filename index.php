@@ -243,6 +243,7 @@ $initialContent = array_replace_recursive($defaults, $content);
         <div class="flex gap-2 text-sm">
             <button type="button" data-mode="url" class="modal-mode bg-white/10 px-3 py-2 rounded">URL</button>
             <button type="button" data-mode="upload" class="modal-mode bg-white/10 px-3 py-2 rounded">Subir archivo</button>
+            <button type="button" data-mode="library" class="modal-mode bg-white/10 px-3 py-2 rounded">Biblioteca</button>
         </div>
         <div id="urlPane" class="space-y-2">
             <label class="block text-xs">URL de imagen</label>
@@ -251,6 +252,13 @@ $initialContent = array_replace_recursive($defaults, $content);
         <div id="uploadPane" class="hidden space-y-2">
             <label class="block text-xs">Archivo (jpg/png/webp, máx 5MB)</label>
             <input id="imageFileInput" type="file" accept="image/png,image/jpeg,image/webp" class="w-full text-xs">
+        </div>
+        <div id="libraryPane" class="hidden space-y-3">
+            <p id="libraryStatus" class="text-xs text-white/70">Explora y selecciona una imagen.</p>
+            <div id="libraryGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1"></div>
+            <div class="flex justify-end">
+                <button id="confirmLibrarySelection" type="button" class="px-4 py-2 rounded bg-art-neon text-black font-bold">Usar imagen seleccionada</button>
+            </div>
         </div>
         <p id="modalFeedback" class="text-xs"></p>
         <div class="flex justify-end gap-2">
@@ -266,6 +274,7 @@ window.APP_CONTENT_STATE = <?= json_encode($initialContent, JSON_UNESCAPED_UNICO
 window.ADMIN_EDITOR_ENDPOINTS = {
     saveContent: <?= json_encode(url_for('/api/save-content.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
     uploadImage: <?= json_encode(url_for('/api/upload-image.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+    listImages: <?= json_encode(url_for('/api/list-images.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
 };
 </script>
 <script src="<?= esc(url_for('/public/js/admin-editor.js')) ?>"></script>
