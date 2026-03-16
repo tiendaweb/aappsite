@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../includes/content-repo.php';
 require_once __DIR__ . '/../../includes/template-helpers.php';
+require_once __DIR__ . '/../../includes/auth.php';
 
 $initialContent = read_content_file();
+$isAdminPreview = current_user() !== null;
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -209,7 +211,10 @@ $initialContent = read_content_file();
     <!-- NAVEGACI&Oacute;N SIMPLE (Opcional, para dar look de Landing) -->
     <nav class="w-full absolute top-0 left-0 z-50 px-6 py-6 flex justify-between items-center max-w-7xl mx-auto right-0">
         <div class="text-white/50 text-xs tracking-widest uppercase font-bold" data-edit-key="sections.nav_absolute_1.div_tracking_widest_1.text" data-edit-type="text"><?= esc(content_get($initialContent, 'sections.nav_absolute_1.div_tracking_widest_1.text', 'Ezequiel Usay')) ?></div>
-        <div class="flex gap-4">
+        <div class="flex gap-4 items-center">
+            <?php if ($isAdminPreview): ?>
+                <a href="<?= esc(url_for('/admin')) ?>" class="text-[11px] uppercase tracking-wider px-3 py-2 rounded-lg border border-white/20 text-white/80 hover:text-white hover:border-white/60 transition-colors">Volver al admin</a>
+            <?php endif; ?>
             <a href="<?= esc(content_get($initialContent, 'sections.nav_absolute_1.div_flex_2.a_hover_text_white_1.href', 'https://www.instagram.com/suplementacionam')) ?>" target="_blank" class="text-white/60 hover:text-white transition-colors" data-edit-key="sections.nav_absolute_1.div_flex_2.a_hover_text_white_1.href" data-edit-type="text" data-edit-key-href="sections.nav_absolute_1.div_flex_2.a_hover_text_white_1.href" data-edit-type-href="text">
                 <i data-lucide="instagram" class="w-5 h-5"></i>
             </a>
@@ -225,7 +230,7 @@ $initialContent = read_content_file();
         <div class="inline-block relative mb-8 mx-auto">
             <!-- Logo Circular -->
             <div class="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl relative z-10 bg-black">
-                <img src="https://aapp.space/storage/images/609c03880ee47-69b4aa55c2d3e.jpg" alt="<?= esc(content_get($initialContent, 'sections.header_min_h_90vh_1.div_inline_block_1.div_h_32_1.img_h_full_1.alt', 'Logo Ezequiel')) ?>" class="w-full h-full object-cover" data-edit-key="sections.header_min_h_90vh_1.div_inline_block_1.div_h_32_1.img_h_full_1.alt" data-edit-type="text" data-edit-key-alt="sections.header_min_h_90vh_1.div_inline_block_1.div_h_32_1.img_h_full_1.alt" data-edit-type-alt="text">
+                <img src="<?= esc(resolve_image_url(content_get($initialContent, 'sections.header_min_h_90vh_1.div_inline_block_1.div_h_32_1.img_h_full_1.src', ['source_type' => 'url', 'value' => 'https://aapp.space/storage/images/609c03880ee47-69b4aa55c2d3e.jpg']))) ?>" alt="<?= esc(content_get($initialContent, 'sections.header_min_h_90vh_1.div_inline_block_1.div_h_32_1.img_h_full_1.alt', 'Logo Ezequiel')) ?>" class="w-full h-full object-cover" data-edit-key="sections.header_min_h_90vh_1.div_inline_block_1.div_h_32_1.img_h_full_1.src" data-edit-type="image" data-edit-key-alt="sections.header_min_h_90vh_1.div_inline_block_1.div_h_32_1.img_h_full_1.alt" data-edit-type-alt="text">
             </div>
             <!-- Glow detr&aacute;s del logo -->
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-yellow-500/20 blur-[50px] rounded-full z-0 pointer-events-none"></div>
@@ -274,7 +279,7 @@ $initialContent = read_content_file();
                         
                         <div class="absolute left-0 top-0 w-6 h-full bg-gradient-to-r from-black/80 via-black/40 to-transparent z-20 border-r border-white/5"></div>
                         
-                        <img src="https://aapp.space/storage/images/609c03880ee47-69b86cca5fcc3.jpg" alt="<?= esc(content_get($initialContent, 'sections.main_max_w_7xl_1.section_ebook.div_glass_panel_1.div_grid_2.div_order_1_2.div_relative_1.div_relative_2.img_h_full_1.alt', 'Portada Ebook Suplementación')) ?>" class="w-full h-full object-cover relative z-10" data-edit-key="sections.main_max_w_7xl_1.section_ebook.div_glass_panel_1.div_grid_2.div_order_1_2.div_relative_1.div_relative_2.img_h_full_1.alt" data-edit-type="text" data-edit-key-alt="sections.main_max_w_7xl_1.section_ebook.div_glass_panel_1.div_grid_2.div_order_1_2.div_relative_1.div_relative_2.img_h_full_1.alt" data-edit-type-alt="text">
+                        <img src="<?= esc(resolve_image_url(content_get($initialContent, 'sections.main_max_w_7xl_1.section_ebook.div_glass_panel_1.div_grid_2.div_order_1_2.div_relative_1.div_relative_2.img_h_full_1.src', ['source_type' => 'url', 'value' => 'https://aapp.space/storage/images/609c03880ee47-69b86cca5fcc3.jpg']))) ?>" alt="<?= esc(content_get($initialContent, 'sections.main_max_w_7xl_1.section_ebook.div_glass_panel_1.div_grid_2.div_order_1_2.div_relative_1.div_relative_2.img_h_full_1.alt', 'Portada Ebook Suplementación')) ?>" class="w-full h-full object-cover relative z-10" data-edit-key="sections.main_max_w_7xl_1.section_ebook.div_glass_panel_1.div_grid_2.div_order_1_2.div_relative_1.div_relative_2.img_h_full_1.src" data-edit-type="image" data-edit-key-alt="sections.main_max_w_7xl_1.section_ebook.div_glass_panel_1.div_grid_2.div_order_1_2.div_relative_1.div_relative_2.img_h_full_1.alt" data-edit-type-alt="text">
                         
                         <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 z-20 pointer-events-none"></div>
                         
@@ -435,7 +440,7 @@ $initialContent = read_content_file();
                 <div class="flex flex-col md:flex-row">
                     <!-- Imagen Vertical -->
                     <div class="w-full md:w-2/5 lg:w-1/3 h-[400px] md:h-auto relative">
-                        <img src="https://aapp.space/storage/images/609c03880ee47-69b4a902f20ae.jpg" alt="<?= esc(content_get($initialContent, 'sections.main_max_w_7xl_1.section_fade_in_section_4.div_glass_panel_1.div_flex_1.div_md_w_2_5_1.img_absolute_1.alt', 'Ezequiel Usay Bio')) ?>" class="absolute inset-0 w-full h-full object-cover object-top filter grayscale-[20%]" data-edit-key="sections.main_max_w_7xl_1.section_fade_in_section_4.div_glass_panel_1.div_flex_1.div_md_w_2_5_1.img_absolute_1.alt" data-edit-type="text" data-edit-key-alt="sections.main_max_w_7xl_1.section_fade_in_section_4.div_glass_panel_1.div_flex_1.div_md_w_2_5_1.img_absolute_1.alt" data-edit-type-alt="text">
+                        <img src="<?= esc(resolve_image_url(content_get($initialContent, 'sections.main_max_w_7xl_1.section_fade_in_section_4.div_glass_panel_1.div_flex_1.div_md_w_2_5_1.img_absolute_1.src', ['source_type' => 'url', 'value' => 'https://aapp.space/storage/images/609c03880ee47-69b4a902f20ae.jpg']))) ?>" alt="<?= esc(content_get($initialContent, 'sections.main_max_w_7xl_1.section_fade_in_section_4.div_glass_panel_1.div_flex_1.div_md_w_2_5_1.img_absolute_1.alt', 'Ezequiel Usay Bio')) ?>" class="absolute inset-0 w-full h-full object-cover object-top filter grayscale-[20%]" data-edit-key="sections.main_max_w_7xl_1.section_fade_in_section_4.div_glass_panel_1.div_flex_1.div_md_w_2_5_1.img_absolute_1.src" data-edit-type="image" data-edit-key-alt="sections.main_max_w_7xl_1.section_fade_in_section_4.div_glass_panel_1.div_flex_1.div_md_w_2_5_1.img_absolute_1.alt" data-edit-type-alt="text">
                         <div class="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-gray-dark via-transparent to-transparent"></div>
                     </div>
                     
