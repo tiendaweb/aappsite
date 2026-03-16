@@ -79,6 +79,6 @@ function require_auth(): void
         return;
     }
 
-    header('Location: /login');
+    header('Location: /login.php');
     exit;
 }
