@@ -233,6 +233,30 @@ function switchImageMode(mode) {
     });
 }
 
+function isImageModalOpen() {
+    const modal = document.getElementById('imageModal');
+    return Boolean(modal) && !modal.classList.contains('hidden');
+}
+
+function getClipboardImageFile(event) {
+    const items = event && event.clipboardData ? event.clipboardData.items : null;
+    if (!items || items.length === 0) {
+        return { ok: false, error: 'El portapapeles no contiene una imagen.' };
+    }
+
+    const imageItem = Array.from(items).find((item) => (item.type || '').toLowerCase().startsWith('image/'));
+    if (!imageItem) {
+        return { ok: false, error: 'El portapapeles no contiene una imagen.' };
+    }
+
+    const file = imageItem.getAsFile();
+    if (!file) {
+        return { ok: false, error: 'No se pudo leer la imagen pegada.' };
+    }
+
+    return { ok: true, file };
+}
+
 function pathSegments(key) {
     return key.replace(/\[(\d+)\]/g, '.$1').split('.');
 }
@@ -383,6 +407,27 @@ if (isAuthenticated) {
     uploadDropzone.addEventListener('drop', (event) => {
         const droppedFile = event.dataTransfer && event.dataTransfer.files ? event.dataTransfer.files[0] : null;
         syncSelectedUploadFile(droppedFile);
+    });
+
+    document.addEventListener('paste', (event) => {
+        if (!isImageModalOpen()) return;
+
+        const clipboardFile = getClipboardImageFile(event);
+        if (!clipboardFile.ok) {
+            setModalFeedback(clipboardFile.error, false);
+            return;
+        }
+
+        const synced = syncSelectedUploadFile(clipboardFile.file);
+        if (!synced.ok) {
+            setModalFeedback(synced.error || 'No se pudo usar la imagen pegada.', false);
+            return;
+        }
+
+        if (imageMode !== 'upload') {
+            switchImageMode('upload');
+        }
+        setModalFeedback('Imagen pegada lista para subir.', true);
     });
 
     document.getElementById('saveModal').addEventListener('click', async () => {
