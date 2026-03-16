@@ -10,6 +10,11 @@
       "obras": "Galería",
       "mercado": "Market",
       "academia": "Clases"
+    },
+    "seo": {
+      "description": "Galería inmersiva de Claudia Nuñez Fasce: obra clásica y visiones digitales.",
+      "keywords": "arte, galería, claudia nuñez fasce, óleo, caricatura",
+      "og_image": ""
     }
   },
   "hero": {
