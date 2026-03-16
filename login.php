@@ -6,7 +6,7 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/url.php';
 
 if (current_user() !== null) {
-    header('Location: ' . url_for('/admin.php'));
+    header('Location: ' . url_for('/admin'));
     exit;
 }
 
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'No se pudo crear el usuario inicial.';
             } else {
                 $_SESSION['user_id'] = $user['id'];
-                header('Location: ' . url_for('/admin.php'));
+                header('Location: ' . url_for('/admin'));
                 exit;
             }
         }
@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($user !== null && isset($user['password_hash']) && password_verify($password, (string) $user['password_hash'])) {
             $_SESSION['user_id'] = $user['id'];
-            header('Location: ' . url_for('/admin.php'));
+            header('Location: ' . url_for('/admin'));
             exit;
         }
 
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p class="error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p>
     <?php endif; ?>
 
-    <form method="post" action="<?= htmlspecialchars(url_for('/login.php'), ENT_QUOTES, 'UTF-8') ?>">
+    <form method="post" action="<?= htmlspecialchars(url_for('/login'), ENT_QUOTES, 'UTF-8') ?>">
         <label>
             Usuario o email
             <input type="text" name="username" required value="<?= htmlspecialchars($username, ENT_QUOTES, 'UTF-8') ?>">

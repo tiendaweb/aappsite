@@ -81,6 +81,6 @@ function require_auth(): void
         return;
     }
 
-    header('Location: ' . url_for('/login.php'));
+    header('Location: ' . url_for('/login'));
     exit;
 }

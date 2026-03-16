@@ -13,5 +13,5 @@ if (ini_get('session.use_cookies')) {
 
 session_destroy();
 
-header('Location: ' . url_for('/login.php'));
+header('Location: ' . url_for('/login'));
 exit;
