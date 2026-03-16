@@ -11,20 +11,60 @@ if (current_user() !== null) {
 
 $error = '';
 $username = '';
+$isInitialSetup = !has_users();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim((string) ($_POST['username'] ?? ''));
-    $password = (string) ($_POST['password'] ?? '');
+    if ($isInitialSetup) {
+        $username = trim((string) ($_POST['username'] ?? ''));
+        $password = (string) ($_POST['password'] ?? '');
 
-    $user = find_user_by_username($username);
+        if ($username === '' || mb_strlen($username) < 3 || mb_strlen($username) > 50) {
+            $error = 'El usuario/email debe tener entre 3 y 50 caracteres.';
+        } elseif (!preg_match('/^[A-Za-z0-9._@+-]+$/', $username)) {
+            $error = 'El usuario/email contiene caracteres no permitidos.';
+        } elseif (str_contains($username, '@') && filter_var($username, FILTER_VALIDATE_EMAIL) === false) {
+            $error = 'El email no es válido.';
+        } elseif (
+            strlen($password) < 10
+            || !preg_match('/[A-Z]/', $password)
+            || !preg_match('/[a-z]/', $password)
+            || !preg_match('/[0-9]/', $password)
+            || !preg_match('/[^A-Za-z0-9]/', $password)
+        ) {
+            $error = 'La contraseña debe tener al menos 10 caracteres, con mayúsculas, minúsculas, número y símbolo.';
+        } elseif (has_users()) {
+            $error = 'La configuración inicial ya fue completada.';
+            $isInitialSetup = false;
+        } else {
+            $user = [
+                'id' => 1,
+                'username' => $username,
+                'name' => 'Administrador',
+                'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+            ];
 
-    if ($user !== null && isset($user['password_hash']) && password_verify($password, (string) $user['password_hash'])) {
-        $_SESSION['user_id'] = $user['id'];
-        header('Location: /admin.php');
-        exit;
+            if (!save_users([$user])) {
+                $error = 'No se pudo crear el usuario inicial.';
+            } else {
+                $_SESSION['user_id'] = $user['id'];
+                header('Location: /admin.php');
+                exit;
+            }
+        }
+    } else {
+        $username = trim((string) ($_POST['username'] ?? ''));
+        $password = (string) ($_POST['password'] ?? '');
+
+        $user = find_user_by_username($username);
+
+        if ($user !== null && isset($user['password_hash']) && password_verify($password, (string) $user['password_hash'])) {
+            $_SESSION['user_id'] = $user['id'];
+            header('Location: /admin.php');
+            exit;
+        }
+
+        $error = 'Usuario o contraseña inválidos.';
     }
-
-    $error = 'Usuario o contraseña inválidos.';
 }
 ?>
 <!doctype html>
@@ -41,20 +81,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
-    <h1>Iniciar sesión</h1>
+    <?php if ($isInitialSetup): ?>
+        <h1>Crear administrador inicial</h1>
+    <?php else: ?>
+        <h1>Iniciar sesión</h1>
+    <?php endif; ?>
+
     <?php if ($error !== ''): ?>
         <p class="error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p>
     <?php endif; ?>
+
     <form method="post" action="/login.php">
         <label>
-            Usuario
+            Usuario o email
             <input type="text" name="username" required value="<?= htmlspecialchars($username, ENT_QUOTES, 'UTF-8') ?>">
         </label>
         <label>
             Contraseña
             <input type="password" name="password" required>
         </label>
-        <button type="submit">Entrar</button>
+        <button type="submit"><?= $isInitialSetup ? 'Crear administrador' : 'Entrar' ?></button>
     </form>
+
+    <?php if ($isInitialSetup): ?>
+        <p>La contraseña debe tener mínimo 10 caracteres e incluir mayúsculas, minúsculas, número y símbolo.</p>
+    <?php endif; ?>
 </body>
 </html>
