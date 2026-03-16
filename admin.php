@@ -278,7 +278,11 @@ $ogImage = admin_content_get($content, 'site.seo.og_image', '');
                         throw new Error(data.error || 'No se pudo importar la plantilla');
                     }
 
-                    importStatus.textContent = `Plantilla ${data.result.slug} importada (${data.result.editable_nodes} nodos editables).`;
+                    const report = data.result.report || {};
+                    const variablesCreated = Number(report.variables_created || data.result.editable_nodes || 0);
+                    const conflictCount = Array.isArray(report.name_conflicts) ? report.name_conflicts.length : 0;
+                    const conflictSummary = conflictCount > 0 ? ` Conflictos de nombre: ${conflictCount}.` : '';
+                    importStatus.textContent = `Plantilla ${data.result.slug} importada (${variablesCreated} variables detectadas).${conflictSummary}`;
                     importStatus.className = 'text-sm text-emerald-300';
                     setTimeout(() => window.location.reload(), 700);
                 } catch (error) {

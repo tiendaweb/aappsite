@@ -22,52 +22,37 @@ function log_app_error(string $message): void
 
 function validate_payload(array $data): bool
 {
-    $requiredTopLevel = [
-        'site' => 'array',
-        'hero' => 'array',
-        'stats' => 'array',
-        'tabs' => 'array',
-        'backgrounds' => 'array',
-    ];
-
-    foreach ($requiredTopLevel as $key => $type) {
-        if (!array_key_exists($key, $data) || gettype($data[$key]) !== $type) {
-            return false;
-        }
+    if ($data === []) {
+        return false;
     }
 
-    $requiredSite = [
-        'lang' => 'string',
-        'title' => 'string',
-        'name' => 'string',
-        'tagline' => 'string',
-        'availability' => 'string',
-        'nav' => 'array',
-    ];
-
-    foreach ($requiredSite as $key => $type) {
-        if (!array_key_exists($key, $data['site']) || gettype($data['site'][$key]) !== $type) {
+    $validateNode = static function ($value, int $depth = 0) use (&$validateNode): bool {
+        if ($depth > 32) {
             return false;
         }
-    }
 
-    $requiredHero = [
-        'headline_prefix' => 'string',
-        'headline_highlight' => 'string',
-        'headline_suffix' => 'string',
-        'description' => 'string',
-        'description_emphasis' => 'string',
-        'featured_image' => 'array',
-        'quote' => 'string',
-    ];
+        if (is_array($value)) {
+            foreach ($value as $key => $item) {
+                if (!is_int($key) && !is_string($key)) {
+                    return false;
+                }
 
-    foreach ($requiredHero as $key => $type) {
-        if (!array_key_exists($key, $data['hero']) || gettype($data['hero'][$key]) !== $type) {
-            return false;
+                if (is_string($key) && trim($key) === '') {
+                    return false;
+                }
+
+                if (!$validateNode($item, $depth + 1)) {
+                    return false;
+                }
+            }
+
+            return true;
         }
-    }
 
-    return true;
+        return is_scalar($value) || $value === null;
+    };
+
+    return $validateNode($data);
 }
 
 function save_content_atomically(array $data): bool
