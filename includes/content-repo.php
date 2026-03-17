@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/tenant.php';
+require_once __DIR__ . '/json-store.php';
+
+const TEMPLATE_CUSTOM_CSS_MAX_BYTES_DEFAULT = 102400;
 
 function content_file_path(?string $tenantId = null): string
 {
@@ -58,6 +61,81 @@ function template_meta_file_path(?string $tenantId = null, ?string $templateSlug
     }
 
     return $templateDir . '/meta.json';
+}
+
+function template_custom_css_max_bytes(): int
+{
+    $configured = getenv('TEMPLATE_CUSTOM_CSS_MAX_BYTES');
+    if ($configured === false) {
+        return TEMPLATE_CUSTOM_CSS_MAX_BYTES_DEFAULT;
+    }
+
+    $parsed = filter_var($configured, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1024, 'max_range' => 1048576]]);
+
+    return is_int($parsed) ? $parsed : TEMPLATE_CUSTOM_CSS_MAX_BYTES_DEFAULT;
+}
+
+function normalize_template_custom_css(string $css): ?string
+{
+    $css = str_replace(["\r\n", "\r"], "\n", $css);
+    $css = rtrim($css);
+
+    if ($css !== '' && !mb_check_encoding($css, 'UTF-8')) {
+        return null;
+    }
+
+    if (strlen($css) > template_custom_css_max_bytes()) {
+        return null;
+    }
+
+    return $css;
+}
+
+function read_template_meta(?string $tenantId = null, ?string $templateSlug = null): array
+{
+    $path = template_meta_file_path($tenantId, $templateSlug);
+    if (!is_string($path) || !is_file($path)) {
+        return [];
+    }
+
+    $meta = read_json_file($path, []);
+
+    return is_array($meta) ? $meta : [];
+}
+
+function read_template_custom_css(?string $tenantId = null, ?string $templateSlug = null): string
+{
+    $meta = read_template_meta($tenantId, $templateSlug);
+    $rawCss = $meta['custom_css'] ?? '';
+
+    if (!is_string($rawCss)) {
+        return '';
+    }
+
+    $normalized = normalize_template_custom_css($rawCss);
+
+    return is_string($normalized) ? $normalized : '';
+}
+
+function save_template_custom_css(string $css, ?string $tenantId = null, ?string $templateSlug = null): bool
+{
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+    $normalizedSlug = normalize_template_slug($templateSlug);
+    $normalizedCss = normalize_template_custom_css($css);
+
+    if ($normalizedSlug === null || $normalizedCss === null) {
+        return false;
+    }
+
+    $path = template_meta_file_path($tenantId, $normalizedSlug);
+    if (!is_string($path)) {
+        return false;
+    }
+
+    $meta = read_template_meta($tenantId, $normalizedSlug);
+    $meta['custom_css'] = $normalizedCss;
+
+    return write_json_file_atomic($path, $meta);
 }
 
 function decode_content_file(string $path): array

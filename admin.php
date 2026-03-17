@@ -133,6 +133,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+
+    if ($action === 'update_template_custom_css') {
+        $targetTemplate = trim((string) ($_POST['template_slug'] ?? ''));
+        $customCss = (string) ($_POST['template_custom_css'] ?? '');
+        $availableTemplates = list_available_templates($tenantId);
+
+        if ($targetTemplate === '' || !in_array($targetTemplate, $availableTemplates, true)) {
+            $error = 'La plantilla del CSS personalizado no es válida.';
+        } else {
+            $normalizedCss = normalize_template_custom_css($customCss);
+
+            if ($normalizedCss === null) {
+                $error = sprintf('El CSS personalizado debe ser UTF-8 y no superar %d bytes.', template_custom_css_max_bytes());
+            } elseif (!save_template_custom_css($normalizedCss, $tenantId, $targetTemplate)) {
+                $error = 'No se pudo guardar el CSS personalizado de la plantilla.';
+            } else {
+                $status = 'CSS personalizado actualizado.';
+            }
+        }
+    }
+
     if ($action === 'update_seo') {
         $seoTitle = trim((string) ($_POST['seo_title'] ?? ''));
         $seoDescription = trim((string) ($_POST['seo_description'] ?? ''));
@@ -219,6 +240,8 @@ $ogImage = admin_content_get($content, 'site.seo.og_image', '');
 $siteDomain = admin_content_get($content, 'site.domain', '');
 $facebookPixelId = admin_content_get($content, 'site.integrations.facebook_pixel_id', '');
 $googleAnalyticsId = admin_content_get($content, 'site.integrations.google_analytics_id', '');
+$activeTemplateCustomCss = read_template_custom_css($tenantId, $activeTemplate);
+$templateCustomCssMaxBytes = template_custom_css_max_bytes();
 ?>
 <!doctype html>
 <html lang="es" class="antialiased">
@@ -579,6 +602,18 @@ $googleAnalyticsId = admin_content_get($content, 'site.integrations.google_analy
                                     </select>
                                     <button class="w-full rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-black font-semibold px-5 py-3 shadow-lg transition-all">
                                         Aplicar Plantilla
+                                    </button>
+                                </form>
+                                <form method="post" class="space-y-3 mt-6 pt-6 border-t border-white/10">
+                                    <input type="hidden" name="action" value="update_template_custom_css">
+                                    <input type="hidden" name="template_slug" value="<?= htmlspecialchars($activeTemplate, ENT_QUOTES, 'UTF-8') ?>">
+                                    <label class="block space-y-1.5">
+                                        <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">CSS personalizado (plantilla activa)</span>
+                                        <textarea name="template_custom_css" rows="8" placeholder="/* CSS adicional de la plantilla */" class="w-full glass-input rounded-xl px-4 py-4 font-mono text-[13px] leading-relaxed resize-y"><?= htmlspecialchars($activeTemplateCustomCss, ENT_QUOTES, 'UTF-8') ?></textarea>
+                                    </label>
+                                    <p class="text-xs text-slate-500">Máximo <?= htmlspecialchars((string) $templateCustomCssMaxBytes, ENT_QUOTES, 'UTF-8') ?> bytes. Se guarda por plantilla activa.</p>
+                                    <button class="w-full rounded-xl bg-gradient-to-r from-fuchsia-400 to-pink-500 text-black font-semibold px-5 py-3 shadow-lg transition-all">
+                                        Guardar CSS personalizado
                                     </button>
                                 </form>
                                 <div class="mt-8 pt-6 border-t border-white/10">

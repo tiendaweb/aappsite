@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/content-repo.php';
+require_once __DIR__ . '/tenant.php';
+
 function integration_value(array $content, string $path, string $default = ''): string
 {
     $segments = explode('.', $path);
@@ -42,6 +45,13 @@ function build_head_injections(array $content): string
         $pixelEscaped = htmlspecialchars($facebookPixelId, ENT_QUOTES, 'UTF-8');
         $parts[] = '<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version="2.0";n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,"script","https://connect.facebook.net/en_US/fbevents.js");fbq("init","' . $pixelEscaped . '");fbq("track","PageView");</script>';
         $parts[] = '<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=' . $pixelEscaped . '&ev=PageView&noscript=1"/></noscript>';
+    }
+
+    $tenantId = resolve_tenant_id();
+    $templateSlug = $content['site']['template'] ?? null;
+    $customCss = is_string($templateSlug) ? read_template_custom_css($tenantId, $templateSlug) : '';
+    if ($customCss !== '') {
+        $parts[] = '<style id="template-custom-css">' . htmlspecialchars($customCss, ENT_NOQUOTES, 'UTF-8') . '</style>';
     }
 
     return implode("\n", $parts);
