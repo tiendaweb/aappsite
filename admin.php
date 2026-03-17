@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/includes/tenant.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/url.php';
 require_once __DIR__ . '/includes/content-repo.php';
 require_once __DIR__ . '/includes/template-manager.php';
+
+set_current_tenant_id(resolve_tenant_id());
 
 require_auth();
 $user = current_user();
@@ -106,9 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $content = is_array($content) ? $content : [];
             }
 
-            if (!delete_template_directory($templateToDelete)) {
-                $error = 'No se pudo borrar el directorio de la plantilla.';
-            } elseif (!unregister_template_slug($templateToDelete)) {
+            if (!unregister_template_slug($templateToDelete)) {
                 $error = 'No se pudo actualizar el índice de plantillas.';
             } else {
                 $remainingTemplates = list_available_templates();
@@ -123,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!save_content_file($content)) {
                         $error = 'La plantilla se borró, pero no se pudo actualizar la plantilla activa.';
                     } else {
-                        $status = 'Plantilla borrada correctamente.';
+$status = 'Plantilla removida para este tenant.';
                     }
                 }
             }

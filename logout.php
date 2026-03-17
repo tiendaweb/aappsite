@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/url.php';
 
+logout_user();
 $_SESSION = [];
 if (ini_get('session.use_cookies')) {
     $params = session_get_cookie_params();

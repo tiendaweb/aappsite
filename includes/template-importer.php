@@ -38,7 +38,7 @@ function save_html_backup(string $slug, string $html): ?string
     return $path;
 }
 
-function import_template_from_html(string $slug, string $html): array
+function import_template_from_html(string $slug, string $html, ?string $tenantId = null): array
 {
     $slug = normalize_template_slug($slug);
     if ($slug === '' || preg_match('/^[a-z0-9\-]+$/', $slug) !== 1) {
@@ -286,13 +286,13 @@ function import_template_from_html(string $slug, string $html): array
         throw new RuntimeException('No se pudo escribir el archivo de plantilla');
     }
 
-    if (!register_template_slug($slug)) {
+    if (!register_template_slug($slug, $tenantId)) {
         throw new RuntimeException('No se pudo registrar la plantilla');
     }
 
-    $existingContent = read_content_file();
+    $existingContent = read_content_file($tenantId);
     $mergedContent = array_replace_recursive($existingContent, $defaults);
-    if (!save_content_file($mergedContent)) {
+    if (!save_content_file($mergedContent, $tenantId)) {
         throw new RuntimeException('No se pudo actualizar data/content.json');
     }
 

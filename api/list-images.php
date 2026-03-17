@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../includes/tenant.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/url.php';
 
+set_current_tenant_id(resolve_tenant_id());
 require_auth();
 
 header('Content-Type: application/json; charset=utf-8');
@@ -15,7 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit;
 }
 
-$uploadsDir = dirname(__DIR__) . '/public/uploads';
+$tenantId = current_tenant_id();
+$uploadsDir = tenant_uploads_dir($tenantId);
 $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
 
 if (!is_dir($uploadsDir)) {
@@ -52,7 +55,7 @@ foreach ($entries as $entry) {
     }
 
     $images[] = [
-        'url' => url_for('/public/uploads/' . rawurlencode($entry)),
+        'url' => url_for('/public/uploads/' . rawurlencode($tenantId) . '/' . rawurlencode($entry)),
         'name' => $entry,
         'mtime' => $mtime,
     ];

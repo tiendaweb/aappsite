@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/includes/tenant.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/url.php';
+
+set_current_tenant_id(resolve_tenant_id());
 
 if (current_user() !== null) {
     header('Location: ' . url_for('/admin'));
@@ -47,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!save_users([$user])) {
                 $error = 'No se pudo crear el usuario inicial.';
             } else {
-                $_SESSION['user_id'] = $user['id'];
+                login_user($user, current_tenant_id());
                 header('Location: ' . url_for('/admin'));
                 exit;
             }
@@ -59,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = find_user_by_username($username);
 
         if ($user !== null && isset($user['password_hash']) && password_verify($password, (string) $user['password_hash'])) {
-            $_SESSION['user_id'] = $user['id'];
+            login_user($user, current_tenant_id());
             header('Location: ' . url_for('/admin'));
             exit;
         }

@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../includes/tenant.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/template-importer.php';
 
+set_current_tenant_id(resolve_tenant_id());
 require_auth();
 
 header('Content-Type: application/json; charset=utf-8');
@@ -40,7 +42,7 @@ if (trim($html) === '' || trim($slug) === '') {
 }
 
 try {
-    $result = import_template_from_html($slug, $html);
+    $result = import_template_from_html($slug, $html, current_tenant_id());
 } catch (InvalidArgumentException $exception) {
     http_response_code(422);
     echo json_encode(['ok' => false, 'error' => $exception->getMessage()]);
