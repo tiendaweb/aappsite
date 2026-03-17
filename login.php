@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/url.php';
+require_once __DIR__ . '/includes/tenant.php';
 
-if (current_user() !== null) {
+$tenantId = resolve_tenant_id();
+run_initial_tenant_migration($tenantId);
+
+if (current_user($tenantId) !== null) {
     header('Location: ' . url_for('/admin'));
     exit;
 }
 
 $error = '';
 $username = '';
-$isInitialSetup = !has_users();
+$isInitialSetup = !has_users($tenantId);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($isInitialSetup) {
@@ -33,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             || !preg_match('/[^A-Za-z0-9]/', $password)
         ) {
             $error = 'La contraseña debe tener al menos 10 caracteres, con mayúsculas, minúsculas, número y símbolo.';
-        } elseif (has_users()) {
+        } elseif (has_users($tenantId)) {
             $error = 'La configuración inicial ya fue completada.';
             $isInitialSetup = false;
         } else {
@@ -44,10 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'password_hash' => password_hash($password, PASSWORD_DEFAULT),
             ];
 
-            if (!save_users([$user])) {
+            if (!save_users([$user], $tenantId)) {
                 $error = 'No se pudo crear el usuario inicial.';
             } else {
                 $_SESSION['user_id'] = $user['id'];
+                $_SESSION['tenant_id'] = $tenantId;
                 header('Location: ' . url_for('/admin'));
                 exit;
             }
@@ -56,10 +61,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username = trim((string) ($_POST['username'] ?? ''));
         $password = (string) ($_POST['password'] ?? '');
 
-        $user = find_user_by_username($username);
+        $user = find_user_by_username($username, $tenantId);
 
         if ($user !== null && isset($user['password_hash']) && password_verify($password, (string) $user['password_hash'])) {
             $_SESSION['user_id'] = $user['id'];
+                $_SESSION['tenant_id'] = $tenantId;
             header('Location: ' . url_for('/admin'));
             exit;
         }

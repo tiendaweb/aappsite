@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/url.php';
+require_once __DIR__ . '/includes/tenant.php';
 require_once __DIR__ . '/includes/content-repo.php';
 require_once __DIR__ . '/includes/template-manager.php';
 
-require_auth();
-$user = current_user();
+$tenantId = resolve_tenant_id();
+run_initial_tenant_migration($tenantId);
+
+require_auth($tenantId);
+$user = current_user($tenantId);
 
 function admin_content_get(array $data, string $path, string $default = ''): string
 {
@@ -49,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ) {
             $error = 'La nueva contraseña debe tener al menos 10 caracteres, mayúscula, minúscula, número y símbolo.';
         } else {
-            $users = all_users();
+            $users = all_users($tenantId);
             foreach ($users as &$storedUser) {
                 if ((string) ($storedUser['id'] ?? '') === (string) ($user['id'] ?? '')) {
                     $storedUser['password_hash'] = password_hash($newPassword, PASSWORD_DEFAULT);
@@ -58,11 +62,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             unset($storedUser);
 
-            if (!save_users($users)) {
+            if (!save_users($users, $tenantId)) {
                 $error = 'No se pudo actualizar la contraseña.';
             } else {
                 $status = 'Contraseña actualizada correctamente.';
-                $user = current_user();
+                $user = current_user($tenantId);
             }
         }
     }
@@ -70,12 +74,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'update_template') {
         $selectedTemplate = trim((string) ($_POST['site_template'] ?? ''));
-        $availableTemplates = list_available_templates();
+        $availableTemplates = list_available_templates($tenantId);
 
         if ($selectedTemplate === '' || !in_array($selectedTemplate, $availableTemplates, true)) {
             $error = 'La plantilla seleccionada no es válida.';
         } else {
-            $content = read_content_file();
+            $content = read_content_file($tenantId);
             if ($content === []) {
                 $content = json_decode(file_get_contents(__DIR__ . '/data/content.seed.json') ?: '{}', true);
                 $content = is_array($content) ? $content : [];
@@ -83,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $content['site']['template'] = $selectedTemplate;
 
-            if (!save_content_file($content)) {
+            if (!save_content_file($content, $tenantId)) {
                 $error = 'No se pudo guardar la plantilla activa.';
             } else {
                 $status = 'Plantilla activa actualizada.';
@@ -93,14 +97,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'delete_template') {
         $templateToDelete = trim((string) ($_POST['delete_template_slug'] ?? ''));
-        $availableTemplates = list_available_templates();
+        $availableTemplates = list_available_templates($tenantId);
 
         if ($templateToDelete === '' || !in_array($templateToDelete, $availableTemplates, true)) {
             $error = 'La plantilla a borrar no es válida.';
         } elseif (count($availableTemplates) <= 1) {
             $error = 'No se puede borrar la única plantilla disponible.';
         } else {
-            $content = read_content_file();
+            $content = read_content_file($tenantId);
             if ($content === []) {
                 $content = json_decode(file_get_contents(__DIR__ . '/data/content.seed.json') ?: '{}', true);
                 $content = is_array($content) ? $content : [];
@@ -108,10 +112,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!delete_template_directory($templateToDelete)) {
                 $error = 'No se pudo borrar el directorio de la plantilla.';
-            } elseif (!unregister_template_slug($templateToDelete)) {
+            } elseif (!unregister_template_slug($templateToDelete, $tenantId)) {
                 $error = 'No se pudo actualizar el índice de plantillas.';
             } else {
-                $remainingTemplates = list_available_templates();
+                $remainingTemplates = list_available_templates($tenantId);
                 if ($remainingTemplates === []) {
                     $error = 'No quedó ninguna plantilla disponible tras borrar.';
                 } else {
@@ -120,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $content['site']['template'] = $remainingTemplates[0];
                     }
 
-                    if (!save_content_file($content)) {
+                    if (!save_content_file($content, $tenantId)) {
                         $error = 'La plantilla se borró, pero no se pudo actualizar la plantilla activa.';
                     } else {
                         $status = 'Plantilla borrada correctamente.';
@@ -138,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($seoTitle === '' || $seoDescription === '') {
             $error = 'SEO title y SEO description son obligatorios.';
         } else {
-            $content = read_content_file();
+            $content = read_content_file($tenantId);
             if ($content === []) {
                 $content = json_decode(file_get_contents(__DIR__ . '/data/content.seed.json') ?: '{}', true);
                 $content = is_array($content) ? $content : [];
@@ -151,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'og_image' => $ogImage,
             ];
 
-            if (!save_content_file($content)) {
+            if (!save_content_file($content, $tenantId)) {
                 $error = 'No se pudieron guardar los datos SEO.';
             } else {
                 $status = 'Datos SEO guardados.';
@@ -181,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($error === '') {
-            $content = read_content_file();
+            $content = read_content_file($tenantId);
             if ($content === []) {
                 $content = json_decode(file_get_contents(__DIR__ . '/data/content.seed.json') ?: '{}', true);
                 $content = is_array($content) ? $content : [];
@@ -193,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'google_analytics_id' => $googleAnalyticsId,
             ];
 
-            if (!save_content_file($content)) {
+            if (!save_content_file($content, $tenantId)) {
                 $error = 'No se pudieron guardar las integraciones.';
             } else {
                 $status = 'Dominio e integraciones guardados.';
@@ -202,8 +206,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$content = read_content_file();
-$availableTemplates = list_available_templates();
+$content = read_content_file($tenantId);
+$availableTemplates = list_available_templates($tenantId);
 $activeTemplate = admin_content_get($content, 'site.template', 'artistas');
 if (!in_array($activeTemplate, $availableTemplates, true)) {
     $activeTemplate = 'artistas';

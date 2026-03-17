@@ -3,19 +3,25 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/url.php';
+require_once __DIR__ . '/tenant.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-function users_path(): string
+function users_path(?string $tenantId = null): string
 {
-    return dirname(__DIR__) . '/data/users.json';
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+
+    return tenant_file_path($tenantId, 'users.json');
 }
 
-function all_users(): array
+function all_users(?string $tenantId = null): array
 {
-    $path = users_path();
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+    run_initial_tenant_migration($tenantId);
+
+    $path = users_path($tenantId);
     if (!file_exists($path)) {
         return [];
     }
@@ -26,20 +32,19 @@ function all_users(): array
     return is_array($decoded) ? $decoded : [];
 }
 
-function has_users(): bool
+function has_users(?string $tenantId = null): bool
 {
-    return count(all_users()) > 0;
+    return count(all_users($tenantId)) > 0;
 }
 
-function save_users(array $users): bool
+function save_users(array $users, ?string $tenantId = null): bool
 {
-    $path = users_path();
-    $dir = dirname($path);
-
-    if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+    if (!ensure_tenant_directories($tenantId)) {
         return false;
     }
 
+    $path = users_path($tenantId);
     $json = json_encode(array_values($users), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     if ($json === false) {
         return false;
@@ -48,9 +53,9 @@ function save_users(array $users): bool
     return file_put_contents($path, $json . PHP_EOL, LOCK_EX) !== false;
 }
 
-function find_user_by_username(string $username): ?array
+function find_user_by_username(string $username, ?string $tenantId = null): ?array
 {
-    foreach (all_users() as $user) {
+    foreach (all_users($tenantId) as $user) {
         if (isset($user['username']) && strcasecmp((string) $user['username'], $username) === 0) {
             return $user;
         }
@@ -59,14 +64,21 @@ function find_user_by_username(string $username): ?array
     return null;
 }
 
-function current_user(): ?array
+function current_user(?string $tenantId = null): ?array
 {
     $userId = $_SESSION['user_id'] ?? null;
-    if ($userId === null) {
+    $sessionTenant = $_SESSION['tenant_id'] ?? null;
+
+    if ($userId === null || !is_string($sessionTenant)) {
         return null;
     }
 
-    foreach (all_users() as $user) {
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+    if ($sessionTenant !== $tenantId) {
+        return null;
+    }
+
+    foreach (all_users($tenantId) as $user) {
         if (isset($user['id']) && (string) $user['id'] === (string) $userId) {
             return $user;
         }
@@ -75,9 +87,9 @@ function current_user(): ?array
     return null;
 }
 
-function require_auth(): void
+function require_auth(?string $tenantId = null): void
 {
-    if (current_user() !== null) {
+    if (current_user($tenantId) !== null) {
         return;
     }
 

@@ -1,0 +1,366 @@
+{
+  "site": {
+    "lang": "es",
+    "title": "Ezequiel Usay | Suplementación Avanzada",
+    "name": "Claudia Nuñez Fasce",
+    "tagline": "Fine Art & Digital Visions",
+    "availability": "Disponible para comisiones",
+    "nav": {
+      "inicio": "Bio",
+      "obras": "Galería",
+      "mercado": "Market",
+      "academia": "Clases"
+    },
+    "seo": {
+      "description": "Galería inmersiva de Claudia Nuñez Fasce: obra clásica y visiones digitales.",
+      "keywords": "arte, galería, claudia nuñez fasce, óleo, caricatura",
+      "og_image": ""
+    },
+    "template": "fitness"
+  },
+  "hero": {
+    "headline_prefix": "Más de",
+    "headline_highlight": "30 años",
+    "headline_suffix": "capturando la esencia.",
+    "description": "Formada bajo la tutela de maestros como Alberto Bruzzone y Manlio Cecotti, Claudia ha transitado un camino de más de 200 exposiciones. Su obra, que oscila entre lo sacro y lo cotidiano, es un diálogo constante entre el óleo tradicional y la nueva era digital.",
+    "description_emphasis": "Alberto Bruzzone y Manlio Cecotti",
+    "featured_image": {
+      "alt": "Artist Work",
+      "source_type": "url",
+      "value": "https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=800"
+    },
+    "quote": "El arte es la interfaz entre el alma y el espectador"
+  },
+  "stats": [
+    {
+      "value": "200+",
+      "label": "Exposiciones"
+    },
+    {
+      "value": "1987",
+      "label": "Taller Fundado"
+    }
+  ],
+  "tabs": {
+    "inicio": {
+      "id": "inicio"
+    },
+    "obras": {
+      "id": "obras",
+      "title_prefix": "Colección",
+      "title_highlight": "Selecta",
+      "items": [
+        {
+          "image": {
+            "source_type": "url",
+            "value": "https://aapp.space/storage/images/609c03880ee47-69b1f265b0650.jpg"
+          },
+          "alt": "Virgen Desatanudos",
+          "title": "Virgen Desatanudos",
+          "subtitle": "Óleo sobre Lienzo - 1999",
+          "description": "Una de sus obras más icónicas, presente en Mar del Plata y Santa Rosa."
+        },
+        {
+          "image": {
+            "source_type": "url",
+            "value": "https://aapp.space/storage/images/609c03880ee47-69b1f265a41fc.jpg"
+          },
+          "alt": "Plenilunio",
+          "title": "Plenilunio",
+          "subtitle": "Acrílico Experimental",
+          "description": "Valorada en el mercado internacional por su manejo de la luz nocturna."
+        },
+        {
+          "image": {
+            "source_type": "url",
+            "value": "https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?q=80&w=600"
+          },
+          "alt": "Bodegón",
+          "title": "El Sótano",
+          "subtitle": "Clasicismo Argentino",
+          "description": "Estudio de sombras y texturas orgánicas."
+        }
+      ]
+    },
+    "mercado": {
+      "id": "mercado",
+      "title_prefix": "Galería",
+      "title_highlight": "Colectiva",
+      "description": "Un espacio curado por Claudia para artistas que buscan la excelencia. Vende tus obras en una plataforma de alto nivel.",
+      "cta_symbol": "+",
+      "cta_label": "Postular Obra",
+      "featured_artist": {
+        "name": "Marina V.",
+        "style": "ABSTRACTO",
+        "image": "https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?q=80&w=400",
+        "alt": "Obra abstracta de Marina V."
+      }
+    },
+    "academia": {
+      "id": "academia",
+      "title_prefix": "El Arte de la",
+      "title_highlight": "Caricatura",
+      "description": "Aprende los secretos del dibujo fisionómico de la mano de una experta. Clases online y presenciales para todos los niveles.",
+      "button": "Inscribirme",
+      "image": {
+        "alt": "Sesión de dibujo artístico",
+        "source_type": "url",
+        "value": "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=800"
+      }
+    }
+  },
+  "backgrounds": [
+    {
+      "image": {
+        "source_type": "url",
+        "value": "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=2000"
+      }
+    },
+    {
+      "image": {
+        "source_type": "url",
+        "value": "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=2000"
+      }
+    },
+    {
+      "image": {
+        "source_type": "url",
+        "value": "https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?q=80&w=2000"
+      }
+    }
+  ],
+  "sections": {
+    "nav_absolute_1": {
+      "div_tracking_widest_1": {
+        "text": "Ezequiel Usay"
+      },
+      "div_flex_2": {
+        "a_hover_text_white_1": {
+          "href": "https://www.instagram.com/suplementacionam"
+        },
+        "a_hover_text_white_2": {
+          "href": "mailto:suplementacionavanzadamoderna@hotmail.com"
+        }
+      }
+    },
+    "header_min_h_90vh_1": {
+      "h1_sm_text_5xl_1": {
+        "title": "Ezequiel Usay"
+      },
+      "h2_sm_text_xl_1": {
+        "title": "ASESOR EN SUPLEMENTACION AVANZADA Y PREPARADOR FISICO ESPECIALIZADO EN HIPER"
+      },
+      "p_sm_text_lg_1": {
+        "text": "Mi trabajo es simple: separar la ciencia del marketing para que sepas exactamente qué suplementos usar, cuándo usarlos y cuáles evitar, siempre priorizando tu"
+      },
+      "div_mt_12_2": {
+        "a_btn_base_1": {
+          "link_label": "Solicitar Asesoría",
+          "href": "#asesoria"
+        }
+      },
+      "div_inline_block_1": {
+        "div_h_32_1": {
+          "img_h_full_1": {
+            "alt": "Logo Ezequiel"
+          }
+        }
+      }
+    },
+    "main_max_w_7xl_1": {
+      "section_ebook": {
+        "div_glass_panel_1": {
+          "div_grid_2": {
+            "div_order_2_1": {
+              "div_flex_1": {
+                "span_font_bold_1": {
+                  "text": "Lanzamiento Oficial"
+                }
+              },
+              "h2_sm_text_4xl_1": {
+                "title": "Suplementación"
+              },
+              "p_sm_text_lg_1": {
+                "text": "Guía práctica sobre suplementación aplicada al entrenamiento y al rendimiento físico, pensada para hombres y mujeres que quieren informarse mejor antes de elegir qué suplementos usar."
+              },
+              "a_btn_base_1": {
+                "link_label": "Acceder al Ebook",
+                "href": "#"
+              }
+            },
+            "div_order_1_2": {
+              "div_relative_1": {
+                "div_relative_2": {
+                  "img_h_full_1": {
+                    "alt": "Portada Ebook Suplementación"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "section_suplementos": {
+        "div_glass_panel_1": {
+          "div_max_w_3xl_2": {
+            "div_flex_1": {
+              "span_font_bold_1": {
+                "text": "Solo para Argentina"
+              }
+            },
+            "h2_sm_text_4xl_1": {
+              "title": "Suplementos"
+            },
+            "p_sm_text_lg_1": {
+              "text": "Accedé a suplementos deportivos seleccionados para entrenamiento y rendimiento, disponibles con envíos a todo el país."
+            }
+          },
+          "div_relative_3": {
+            "p_uppercase_1": {
+              "text": "Trabajamos con"
+            }
+          },
+          "div_flex_4": {
+            "a_btn_base_1": {
+              "link_label": "WhatsApp",
+              "href": "https://wa.me/5491126333194?text=Hola%20Ezequiel,%20quiero%20consultar%20suplementos"
+            },
+            "a_btn_base_2": {
+              "link_label": "Telegram",
+              "href": "https://t.me/+541126704423"
+            }
+          }
+        }
+      },
+      "section_asesoria": {
+        "div_glass_panel_1": {
+          "div_grid_2": {
+            "div_order_2_1": {
+              "div_bg_black_40_1": {
+                "p_font_bold_1": {
+                  "text": "Certificaciones"
+                }
+              }
+            },
+            "div_order_1_2": {
+              "div_lg_text_left_1": {
+                "div_flex_1": {
+                  "span_font_bold_1": {
+                    "text": "Alto Rendimiento"
+                  }
+                },
+                "h2_sm_text_4xl_1": {
+                  "title": "Asesoría"
+                },
+                "p_sm_text_lg_1": {
+                  "span_font_semibold_1": {
+                    "text": "Planificación de suplementación"
+                  },
+                  "text": "aplicada al entrenamiento, adaptada a tu objetivo y nivel. Enfoque basado en experiencia práctica y análisis científico."
+                },
+                "div_flex_2": {
+                  "a_btn_base_1": {
+                    "link_label": "Telegram",
+                    "href": "https://t.me/+541126704423"
+                  },
+                  "a_btn_base_2": {
+                    "link_label": "Email",
+                    "href": "mailto:suplementacionavanzadamoderna@hotmail.com?subject=Quiero%20solicitar%20asesoría"
+                  }
+                }
+              },
+              "div_grid_2": {
+                "div_bg_black_30_1": {
+                  "p_font_bold_1": {
+                    "text": "Protocolo Individual"
+                  },
+                  "p_leading_relaxed_2": {
+                    "text": "Adaptado a tu genética y estilo de vida real."
+                  }
+                },
+                "div_bg_black_30_2": {
+                  "p_font_bold_1": {
+                    "text": "Ciencia Aplicada"
+                  },
+                  "p_leading_relaxed_2": {
+                    "text": "Ahorrá dinero usando solo lo que realmente funciona."
+                  }
+                },
+                "div_bg_black_30_3": {
+                  "p_font_bold_1": {
+                    "text": "Seguimiento"
+                  },
+                  "p_leading_relaxed_2": {
+                    "text": "Feedback constante para asegurar tu progreso semanal."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "section_fade_in_section_4": {
+        "div_glass_panel_1": {
+          "div_flex_1": {
+            "div_md_w_3_5_2": {
+              "p_font_bold_1": {
+                "text": "Asesor, escritor, coach"
+              },
+              "h2_md_text_4xl_1": {
+                "title": "Ezequiel Usay"
+              },
+              "p_md_text_lg_2": {
+                "text": "A través de"
+              },
+              "div_flex_1": {
+                "a_flex_1": {
+                  "link_label": "Instagram",
+                  "href": "https://www.instagram.com/suplementacionam"
+                }
+              }
+            },
+            "div_md_w_2_5_1": {
+              "img_absolute_1": {
+                "alt": "Ezequiel Usay Bio"
+              }
+            }
+          }
+        }
+      }
+    },
+    "footer_py_10_1": {
+      "div_max_w_7xl_1": {
+        "h2_font_black_1": {
+          "title": "EZEQUIEL USAY"
+        },
+        "p_font_bold_1": {
+          "text": "Fitness & Suplementación Avanzada"
+        },
+        "p_font_semibold_2": {
+          "text": "Ⓒ 2026 Todos los derechos reservados."
+        },
+        "div_flex_1": {
+          "a_hover_text_white_1": {
+            "href": "mailto:suplementacionavanzadamoderna@hotmail.com"
+          },
+          "a_hover_text_white_2": {
+            "href": "https://www.instagram.com/misprote"
+          }
+        }
+      }
+    },
+    "head_item_1": {
+      "link_item_1": {
+        "href": "https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700;900&family=Inter:wght@300;400;600&display=swap"
+      }
+    }
+  },
+  "embedded": {
+    "inline_js": {
+      "observeroptions": {
+        "threshold": 0.15,
+        "rootMargin": "0px 0px -50px 0px"
+      }
+    }
+  }
+}

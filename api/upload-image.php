@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/content-repo.php';
+require_once __DIR__ . '/../includes/tenant.php';
 
-require_auth();
+$tenantId = resolve_tenant_id();
+require_auth($tenantId);
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -77,7 +79,7 @@ if ($mime !== '' && !in_array($mime, $allowed[$extension], true)) {
     exit;
 }
 
-$uploadsDir = dirname(__DIR__) . '/public/uploads';
+$uploadsDir = tenant_uploads_dir($tenantId);
 if (!is_dir($uploadsDir) && !mkdir($uploadsDir, 0775, true) && !is_dir($uploadsDir)) {
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'No se pudo crear directorio de subidas']);
@@ -96,14 +98,14 @@ if (!move_uploaded_file($tmpPath, $destination)) {
     exit;
 }
 
-$publicUrl = '/public/uploads/' . $filename;
-$currentContent = read_content_file();
+$publicUrl = '/public/uploads/' . rawurlencode($tenantId) . '/' . $filename;
+$currentContent = read_content_file($tenantId);
 set_value_by_path($currentContent, $key, [
     'source_type' => 'upload',
     'value' => $publicUrl,
 ]);
 
-if (!save_content_file($currentContent)) {
+if (!save_content_file($currentContent, $tenantId)) {
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'No se pudo persistir el contenido']);
     exit;
