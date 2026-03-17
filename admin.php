@@ -381,6 +381,9 @@ $googleAnalyticsId = admin_content_get($content, 'site.integrations.google_analy
                     <button data-tab="tab-templates" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
                         <i class="ph ph-layout text-lg"></i> Plantillas
                     </button>
+                    <button data-tab="tab-gallery" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+                        <i class="ph ph-images-square text-lg"></i> Galería
+                    </button>
                     <button data-tab="tab-security" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
                         <i class="ph ph-shield-check text-lg"></i> Seguridad
                     </button>
@@ -596,24 +599,6 @@ $googleAnalyticsId = admin_content_get($content, 'site.integrations.google_analy
                                 </div>
                             </section>
 
-                            <section class="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden">
-                                <header class="flex items-center gap-3 mb-6">
-                                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-300">
-                                        <i class="ph ph-images-square text-xl"></i>
-                                    </div>
-                                    <h2 class="text-xl font-semibold text-white">Galería de Imágenes</h2>
-                                </header>
-                                <p class="text-sm text-slate-400 mb-4">Subí archivos, previsualizá y copiá enlaces públicos para usar en enlaces o contenido.</p>
-                                <div class="space-y-4">
-                                    <div class="flex flex-col sm:flex-row gap-3 sm:items-center">
-                                        <input id="gallery-upload-input" type="file" accept="image/png,image/jpeg,image/webp" class="w-full sm:flex-1 glass-input rounded-xl px-4 py-2.5 text-sm">
-                                        <button id="gallery-upload-btn" type="button" class="rounded-xl bg-blue-400 text-black font-semibold px-5 py-2.5 transition-all">Subir imagen</button>
-                                    </div>
-                                    <p id="gallery-status" class="text-xs text-slate-400"></p>
-                                    <div id="gallery-grid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3"></div>
-                                </div>
-                            </section>
-
                             <?php $enableTemplateImportSection = false; ?>
                             <?php if ($enableTemplateImportSection): ?>
                             <section class="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden">
@@ -633,6 +618,27 @@ $googleAnalyticsId = admin_content_get($content, 'site.integrations.google_analy
                                 </form>
                             </section>
                             <?php endif; ?>
+                        </div>
+
+                        <!-- TAB: GALLERY -->
+                        <div id="tab-gallery" class="tab-content">
+                            <section class="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden">
+                                <header class="flex items-center gap-3 mb-6">
+                                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-300">
+                                        <i class="ph ph-images-square text-xl"></i>
+                                    </div>
+                                    <h2 class="text-xl font-semibold text-white">Galería de Imágenes</h2>
+                                </header>
+                                <p class="text-sm text-slate-400 mb-4">Subí archivos, previsualizá y copiá enlaces públicos para usar en enlaces o contenido.</p>
+                                <div class="space-y-4">
+                                    <div class="flex flex-col sm:flex-row gap-3 sm:items-center">
+                                        <input id="gallery-upload-input" type="file" accept="image/png,image/jpeg,image/webp" class="w-full sm:flex-1 glass-input rounded-xl px-4 py-2.5 text-sm">
+                                        <button id="gallery-upload-btn" type="button" class="rounded-xl bg-blue-400 text-black font-semibold px-5 py-2.5 transition-all">Subir imagen</button>
+                                    </div>
+                                    <p id="gallery-status" class="text-xs text-slate-400"></p>
+                                    <div id="gallery-grid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3"></div>
+                                </div>
+                            </section>
                         </div>
 
                         <!-- TAB: SECURITY -->
