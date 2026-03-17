@@ -16,7 +16,28 @@ function subscriptions_path(): string
 
 function read_plans(): array
 {
-    $raw = @file_get_contents(plans_path());
+    $path = plans_path();
+    if (!is_file($path)) {
+        $seedPlans = [
+            [
+                'id' => 'free',
+                'name' => 'Gratis',
+                'description' => 'Ideal para empezar y probar el producto.',
+                'price_monthly' => 0,
+                'is_default' => true,
+            ],
+            [
+                'id' => 'pro',
+                'name' => 'Pro',
+                'description' => 'Incluye soporte prioritario y onboarding asistido.',
+                'price_monthly' => 29,
+                'is_default' => false,
+            ],
+        ];
+        @file_put_contents($path, json_encode($seedPlans, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . PHP_EOL, LOCK_EX);
+    }
+
+    $raw = @file_get_contents($path);
     $decoded = json_decode($raw ?: '[]', true);
 
     return is_array($decoded) ? $decoded : [];
@@ -48,6 +69,7 @@ function read_subscriptions(): array
 {
     $path = subscriptions_path();
     if (!is_file($path)) {
+        @file_put_contents($path, "[]\n", LOCK_EX);
         return [];
     }
 
@@ -90,14 +112,33 @@ function add_subscription(string $tenantId, string $planId, string $email): bool
     }
 
     $subscriptions = read_subscriptions();
-    $subscriptions[] = [
-        'id' => uniqid('sub_', true),
-        'tenant_id' => $tenantId,
-        'email' => mb_strtolower(trim($email)),
-        'plan_id' => $planId,
-        'status' => 'active',
-        'created_at' => gmdate('c'),
-    ];
+    $normalizedEmail = mb_strtolower(trim($email));
+    $updated = false;
+
+    foreach ($subscriptions as &$subscription) {
+        if ((string) ($subscription['tenant_id'] ?? '') !== $tenantId) {
+            continue;
+        }
+
+        $subscription['email'] = $normalizedEmail;
+        $subscription['plan_id'] = $planId;
+        $subscription['status'] = 'active';
+        $subscription['updated_at'] = gmdate('c');
+        $updated = true;
+        break;
+    }
+    unset($subscription);
+
+    if (!$updated) {
+        $subscriptions[] = [
+            'id' => uniqid('sub_', true),
+            'tenant_id' => $tenantId,
+            'email' => $normalizedEmail,
+            'plan_id' => $planId,
+            'status' => 'active',
+            'created_at' => gmdate('c'),
+        ];
+    }
 
     return save_subscriptions($subscriptions);
 }

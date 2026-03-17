@@ -5,11 +5,23 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/url.php';
 require_once __DIR__ . '/includes/tenant.php';
+require_once __DIR__ . '/includes/billing.php';
 
 $tenantId = resolve_tenant_id();
 run_initial_tenant_migration($tenantId);
 
 if ($tenantId === DEFAULT_TENANT_ID && !has_users($tenantId)) {
+    if (isset($_SESSION['selected_plan_id'])) {
+        $selectedPlan = find_plan_by_id((string) $_SESSION['selected_plan_id']);
+        if ($selectedPlan !== null && !empty($selectedPlan['price_monthly']) && empty($_SESSION['checkout_completed'])) {
+            header('Location: ' . url_for('/checkout'));
+            exit;
+        }
+
+        header('Location: ' . url_for('/register'));
+        exit;
+    }
+
     header('Location: ' . url_for('/app-home'));
     exit;
 }
