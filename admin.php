@@ -712,6 +712,9 @@ $googleAnalyticsId = admin_content_get($content, 'site.integrations.google_analy
         const galleryStatus = document.getElementById('gallery-status');
         const galleryUploadInput = document.getElementById('gallery-upload-input');
         const galleryUploadBtn = document.getElementById('gallery-upload-btn');
+        const importTemplateForm = document.getElementById('import-template-form');
+        const importTemplateStatus = document.getElementById('import-template-status');
+        const importTemplateSubmit = document.getElementById('import-template-submit');
 
         function setGalleryStatus(message, isError = false) {
             if (!galleryStatus) return;
@@ -804,6 +807,58 @@ $googleAnalyticsId = admin_content_get($content, 'site.integrations.google_analy
                     setGalleryStatus('Error subiendo imagen: ' + error.message, true);
                 } finally {
                     galleryUploadBtn.disabled = false;
+                }
+            });
+        }
+
+        function setImportTemplateStatus(message, isError = false) {
+            if (!importTemplateStatus) return;
+            importTemplateStatus.innerText = message;
+            importTemplateStatus.classList.toggle('text-rose-300', isError);
+            importTemplateStatus.classList.toggle('text-emerald-300', !isError);
+        }
+
+        if (importTemplateForm && importTemplateSubmit) {
+            importTemplateForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const slug = (importTemplateForm.elements.import_slug?.value || '').trim();
+                const html = (importTemplateForm.elements.import_html?.value || '').trim();
+
+                if (!slug || !html) {
+                    setImportTemplateStatus('Completá slug y HTML antes de importar.', true);
+                    return;
+                }
+
+                importTemplateSubmit.disabled = true;
+                setImportTemplateStatus('Importando plantilla...');
+
+                try {
+                    const response = await fetch('<?= htmlspecialchars(url_for('/api/import-template.php')) ?>', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ slug, html }),
+                    });
+
+                    let result;
+                    try {
+                        result = await response.json();
+                    } catch (error) {
+                        throw new Error('Respuesta inválida del servidor (JSON).');
+                    }
+
+                    if (!response.ok || !result.ok) {
+                        throw new Error(result.error || 'No se pudo importar la plantilla.');
+                    }
+
+                    setImportTemplateStatus(`Plantilla importada con éxito: ${result.slug || slug}.`);
+                    importTemplateForm.reset();
+                } catch (error) {
+                    setImportTemplateStatus(`Error de importación: ${error.message}`, true);
+                } finally {
+                    importTemplateSubmit.disabled = false;
                 }
             });
         }
