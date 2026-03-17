@@ -1,0 +1,16 @@
+[
+  {
+    "id": "free",
+    "name": "Gratis",
+    "description": "Ideal para empezar y probar el producto.",
+    "price_monthly": 0,
+    "is_default": true
+  },
+  {
+    "id": "pro",
+    "name": "Pro",
+    "description": "Incluye soporte prioritario y onboarding asistido.",
+    "price_monthly": 29,
+    "is_default": false
+  }
+]

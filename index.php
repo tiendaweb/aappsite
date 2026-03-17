@@ -13,6 +13,12 @@ require_once __DIR__ . '/includes/integrations.php';
 $tenantId = resolve_tenant_id();
 run_initial_tenant_migration($tenantId);
 
+
+if ($tenantId === DEFAULT_TENANT_ID && !has_users($tenantId) && current_user($tenantId) === null) {
+    header('Location: ' . url_for('/app-home'));
+    exit;
+}
+
 $isLoggedIn = current_user($tenantId) !== null;
 $content = read_content_file($tenantId);
 $activeTemplate = resolve_active_template($content, 'artistas', $tenantId);

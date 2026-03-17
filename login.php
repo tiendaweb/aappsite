@@ -9,6 +9,11 @@ require_once __DIR__ . '/includes/tenant.php';
 $tenantId = resolve_tenant_id();
 run_initial_tenant_migration($tenantId);
 
+if ($tenantId === DEFAULT_TENANT_ID && !has_users($tenantId)) {
+    header('Location: ' . url_for('/app-home'));
+    exit;
+}
+
 if (current_user($tenantId) !== null) {
     header('Location: ' . url_for('/admin'));
     exit;

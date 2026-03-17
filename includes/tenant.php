@@ -30,6 +30,17 @@ function resolve_tenant_id(): string
         return $resolved;
     }
 
+    $queryTenant = (string) ($_GET['tenant'] ?? '');
+    if ($queryTenant !== '') {
+        $resolved = sanitize_tenant_id($queryTenant);
+        return $resolved;
+    }
+
+    if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['tenant_id']) && is_string($_SESSION['tenant_id'])) {
+        $resolved = sanitize_tenant_id((string) $_SESSION['tenant_id']);
+        return $resolved;
+    }
+
     $requestPath = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
     if (preg_match('#^/t/([a-zA-Z0-9\-]+)(?:/|$)#', $requestPath, $matches) === 1) {
         $resolved = sanitize_tenant_id((string) $matches[1]);

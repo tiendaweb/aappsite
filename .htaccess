@@ -5,6 +5,10 @@ RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
+RewriteRule ^app-home/?$ public/app-home.php [L,QSA]
+RewriteRule ^select-plan/?$ select-plan.php [L,QSA]
+RewriteRule ^register/?$ register.php [L,QSA]
+RewriteRule ^checkout/?$ checkout.php [L,QSA]
 RewriteRule ^login/?$ login.php [L,QSA]
 RewriteRule ^admin/?$ admin.php [L,QSA]
 RewriteRule ^logout/?$ logout.php [L,QSA]
