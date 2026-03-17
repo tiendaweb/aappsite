@@ -7,7 +7,7 @@ require_once __DIR__ . '/../includes/content-repo.php';
 require_once __DIR__ . '/../includes/tenant.php';
 
 $tenantId = resolve_tenant_id();
-require_auth($tenantId);
+require_tenant_admin($tenantId);
 
 header('Content-Type: application/json; charset=utf-8');
 

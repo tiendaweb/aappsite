@@ -3,6 +3,7 @@
     "id": 1,
     "username": "admin",
     "name": "Administrador",
-    "password_hash": "$2y$12$mdEM/XZPahVTmLY9e2Sjo.Nqs9fVXnT7ag67b7XyAZRNHYhjNeBWO"
+    "password_hash": "$2y$12$mdEM/XZPahVTmLY9e2Sjo.Nqs9fVXnT7ag67b7XyAZRNHYhjNeBWO",
+    "role": "super-admin"
   }
 ]

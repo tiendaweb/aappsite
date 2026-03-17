@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/tenant.php';
+require_once __DIR__ . '/json-store.php';
 
 function plans_path(): string
 {
@@ -37,8 +38,7 @@ function read_plans(): array
         @file_put_contents($path, json_encode($seedPlans, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . PHP_EOL, LOCK_EX);
     }
 
-    $raw = @file_get_contents($path);
-    $decoded = json_decode($raw ?: '[]', true);
+    $decoded = read_json_file($path, []);
 
     return is_array($decoded) ? $decoded : [];
 }
@@ -73,20 +73,19 @@ function read_subscriptions(): array
         return [];
     }
 
-    $raw = @file_get_contents($path);
-    $decoded = json_decode($raw ?: '[]', true);
+    $decoded = read_json_file($path, []);
 
     return is_array($decoded) ? $decoded : [];
 }
 
 function save_subscriptions(array $subscriptions): bool
 {
-    $json = json_encode(array_values($subscriptions), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    if ($json === false) {
-        return false;
-    }
+    return write_json_file_atomic(subscriptions_path(), array_values($subscriptions));
+}
 
-    return file_put_contents(subscriptions_path(), $json . PHP_EOL, LOCK_EX) !== false;
+function save_plans(array $plans): bool
+{
+    return write_json_file_atomic(plans_path(), array_values($plans));
 }
 
 function tenant_has_subscription(string $tenantId): bool

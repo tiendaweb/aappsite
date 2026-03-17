@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $_SESSION['tenant_id'] = (string) $result['tenant_id'];
             $_SESSION['user_id'] = (string) (($result['user']['id'] ?? '1'));
+            $_SESSION['auth_role'] = ROLE_TENANT_ADMIN;
             unset($_SESSION['selected_plan_id'], $_SESSION['checkout_completed']);
             header('Location: ' . url_for('/admin'));
             exit;

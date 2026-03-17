@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/tenant.php';
+require_once __DIR__ . '/json-store.php';
 
 function templates_dir_path(): string
 {
@@ -26,7 +27,7 @@ function read_template_registry(?string $tenantId = null): array
         return [];
     }
 
-    $decoded = json_decode(file_get_contents($path) ?: '[]', true);
+    $decoded = read_json_file($path, []);
     if (!is_array($decoded)) {
         return [];
     }
@@ -60,12 +61,45 @@ function save_template_registry(array $slugs, ?string $tenantId = null): bool
     $normalized = array_values(array_unique($normalized));
     sort($normalized);
 
-    $json = json_encode($normalized, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    if ($json === false) {
-        return false;
+    return write_json_file_atomic($path, $normalized);
+}
+
+function global_template_registry_path(): string
+{
+    return dirname(__DIR__) . '/data/templates-index.json';
+}
+
+function read_global_template_registry(): array
+{
+    $decoded = read_json_file(global_template_registry_path(), []);
+    if (!is_array($decoded)) {
+        return [];
     }
 
-    return file_put_contents($path, $json . PHP_EOL, LOCK_EX) !== false;
+    $slugs = [];
+    foreach ($decoded as $slug) {
+        if (is_string($slug) && is_valid_template_slug($slug)) {
+            $slugs[] = $slug;
+        }
+    }
+
+    $slugs = array_values(array_unique($slugs));
+    sort($slugs);
+    return $slugs;
+}
+
+function save_global_template_registry(array $slugs): bool
+{
+    $normalized = [];
+    foreach ($slugs as $slug) {
+        if (is_string($slug) && is_valid_template_slug($slug)) {
+            $normalized[] = $slug;
+        }
+    }
+
+    $normalized = array_values(array_unique($normalized));
+    sort($normalized);
+    return write_json_file_atomic(global_template_registry_path(), $normalized);
 }
 
 function register_template_slug(string $slug, ?string $tenantId = null): bool
@@ -133,7 +167,7 @@ function list_available_templates(?string $tenantId = null): array
         }
     }
 
-    $templates = array_values(array_unique(array_merge($templates, read_template_registry($tenantId))));
+    $templates = array_values(array_unique(array_merge($templates, read_global_template_registry(), read_template_registry($tenantId))));
     sort($templates);
 
     return $templates;

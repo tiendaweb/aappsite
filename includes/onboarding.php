@@ -7,6 +7,7 @@ require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/content-repo.php';
 require_once __DIR__ . '/template-manager.php';
 require_once __DIR__ . '/billing.php';
+require_once __DIR__ . '/tenants.php';
 
 function tenant_exists(string $tenantId): bool
 {
@@ -54,6 +55,7 @@ function create_tenant_account(string $tenantId, string $email, string $password
         'id' => 1,
         'username' => $email,
         'name' => 'Administrador',
+        'role' => ROLE_TENANT_ADMIN,
         'password_hash' => password_hash($password, PASSWORD_DEFAULT),
     ];
 
@@ -63,6 +65,10 @@ function create_tenant_account(string $tenantId, string $email, string $password
 
     if (!add_subscription($tenantId, $planId, $email)) {
         return ['ok' => false, 'error' => 'No se pudo registrar la suscripción.'];
+    }
+
+    if (!upsert_tenant($tenantId, $tenantId, 'active')) {
+        return ['ok' => false, 'error' => 'No se pudo registrar el sitio.'];
     }
 
     return ['ok' => true, 'user' => $user, 'tenant_id' => $tenantId];

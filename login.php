@@ -62,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'id' => 1,
                 'username' => $username,
                 'name' => 'Administrador',
+                'role' => ROLE_TENANT_ADMIN,
                 'password_hash' => password_hash($password, PASSWORD_DEFAULT),
             ];
 
@@ -70,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['tenant_id'] = $tenantId;
+                $_SESSION['auth_role'] = ROLE_TENANT_ADMIN;
                 header('Location: ' . url_for('/admin'));
                 exit;
             }
@@ -82,7 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($user !== null && isset($user['password_hash']) && password_verify($password, (string) $user['password_hash'])) {
             $_SESSION['user_id'] = $user['id'];
-                $_SESSION['tenant_id'] = $tenantId;
+            $_SESSION['tenant_id'] = $tenantId;
+            $_SESSION['auth_role'] = ROLE_TENANT_ADMIN;
             header('Location: ' . url_for('/admin'));
             exit;
         }
