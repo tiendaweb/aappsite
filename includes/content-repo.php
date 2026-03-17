@@ -2,14 +2,21 @@
 
 declare(strict_types=1);
 
-function content_file_path(): string
+require_once __DIR__ . '/tenant.php';
+
+function content_file_path(?string $tenantId = null): string
 {
-    return dirname(__DIR__) . '/data/content.json';
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+
+    return tenant_file_path($tenantId, 'content.json');
 }
 
-function read_content_file(): array
+function read_content_file(?string $tenantId = null): array
 {
-    $target = content_file_path();
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+    run_initial_tenant_migration($tenantId);
+
+    $target = content_file_path($tenantId);
     if (!file_exists($target)) {
         return [];
     }
@@ -19,9 +26,14 @@ function read_content_file(): array
     return is_array($decoded) ? $decoded : [];
 }
 
-function save_content_file(array $data): bool
+function save_content_file(array $data, ?string $tenantId = null): bool
 {
-    $target = content_file_path();
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+    if (!ensure_tenant_directories($tenantId)) {
+        return false;
+    }
+
+    $target = content_file_path($tenantId);
     $tmp = $target . '.tmp.' . uniqid('', true);
     $lockFile = $target . '.lock';
     $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

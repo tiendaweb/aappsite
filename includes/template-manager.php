@@ -2,19 +2,26 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/tenant.php';
+
 function templates_dir_path(): string
 {
     return dirname(__DIR__) . '/templates';
 }
 
-function template_registry_path(): string
+function template_registry_path(?string $tenantId = null): string
 {
-    return dirname(__DIR__) . '/data/templates-index.json';
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+
+    return tenant_file_path($tenantId, 'templates-index.json');
 }
 
-function read_template_registry(): array
+function read_template_registry(?string $tenantId = null): array
 {
-    $path = template_registry_path();
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+    run_initial_tenant_migration($tenantId);
+
+    $path = template_registry_path($tenantId);
     if (!is_file($path)) {
         return [];
     }
@@ -34,9 +41,14 @@ function read_template_registry(): array
     return array_values(array_unique($valid));
 }
 
-function save_template_registry(array $slugs): bool
+function save_template_registry(array $slugs, ?string $tenantId = null): bool
 {
-    $path = template_registry_path();
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+    if (!ensure_tenant_directories($tenantId)) {
+        return false;
+    }
+
+    $path = template_registry_path($tenantId);
     $normalized = [];
 
     foreach ($slugs as $slug) {
@@ -56,30 +68,30 @@ function save_template_registry(array $slugs): bool
     return file_put_contents($path, $json . PHP_EOL, LOCK_EX) !== false;
 }
 
-function register_template_slug(string $slug): bool
+function register_template_slug(string $slug, ?string $tenantId = null): bool
 {
     if (preg_match('/^[a-z0-9\-]+$/', $slug) !== 1) {
         return false;
     }
 
-    $registry = read_template_registry();
+    $registry = read_template_registry($tenantId);
     $registry[] = $slug;
 
-    return save_template_registry($registry);
+    return save_template_registry($registry, $tenantId);
 }
 
-function unregister_template_slug(string $slug): bool
+function unregister_template_slug(string $slug, ?string $tenantId = null): bool
 {
     if (!is_valid_template_slug($slug)) {
         return false;
     }
 
     $registry = array_values(array_filter(
-        read_template_registry(),
+        read_template_registry($tenantId),
         static fn (string $registeredSlug): bool => $registeredSlug !== $slug
     ));
 
-    return save_template_registry($registry);
+    return save_template_registry($registry, $tenantId);
 }
 
 function delete_template_directory(string $slug): bool
@@ -88,35 +100,12 @@ function delete_template_directory(string $slug): bool
         return false;
     }
 
-    $directory = templates_dir_path() . '/' . $slug;
-    if (!is_dir($directory)) {
-        return true;
-    }
-
-    $entries = scandir($directory);
-    if ($entries === false) {
-        return false;
-    }
-
-    foreach ($entries as $entry) {
-        if ($entry === '.' || $entry === '..') {
-            continue;
-        }
-
-        $path = $directory . '/' . $entry;
-        if (is_dir($path)) {
-            return false;
-        }
-
-        if (!unlink($path)) {
-            return false;
-        }
-    }
-
-    return rmdir($directory);
+    // Las plantillas físicas son globales al sistema. Para evitar cruces entre tenants,
+    // el borrado de un tenant solo desregistra su uso y no elimina archivos compartidos.
+    return true;
 }
 
-function list_available_templates(): array
+function list_available_templates(?string $tenantId = null): array
 {
     $templatesDir = templates_dir_path();
     if (!is_dir($templatesDir)) {
@@ -144,7 +133,7 @@ function list_available_templates(): array
         }
     }
 
-    $templates = array_values(array_unique(array_merge($templates, read_template_registry())));
+    $templates = array_values(array_unique(array_merge($templates, read_template_registry($tenantId))));
     sort($templates);
 
     return $templates;
@@ -166,9 +155,9 @@ function template_index_path(string $slug): ?string
     return is_file($path) ? $path : null;
 }
 
-function resolve_active_template(array $content, string $fallback = 'artistas'): string
+function resolve_active_template(array $content, string $fallback = 'artistas', ?string $tenantId = null): string
 {
-    $available = list_available_templates();
+    $available = list_available_templates($tenantId);
     if ($available === []) {
         return $fallback;
     }

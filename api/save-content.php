@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/content-repo.php';
+require_once __DIR__ . '/../includes/tenant.php';
 
-require_auth();
+$tenantId = resolve_tenant_id();
+require_auth($tenantId);
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -55,59 +58,6 @@ function validate_payload(array $data): bool
     return $validateNode($data);
 }
 
-function save_content_atomically(array $data): bool
-{
-    $target = __DIR__ . '/../data/content.json';
-    $tmp = $target . '.tmp.' . uniqid('', true);
-    $lockFile = $target . '.lock';
-
-    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    if ($json === false) {
-        return false;
-    }
-
-    $lockHandle = @fopen($lockFile, 'c');
-    if ($lockHandle === false) {
-        return false;
-    }
-
-    if (!flock($lockHandle, LOCK_EX)) {
-        fclose($lockHandle);
-        return false;
-    }
-
-    $tmpHandle = @fopen($tmp, 'wb');
-    if ($tmpHandle === false) {
-        flock($lockHandle, LOCK_UN);
-        fclose($lockHandle);
-        return false;
-    }
-
-    $bytes = fwrite($tmpHandle, $json . PHP_EOL);
-    if ($bytes === false) {
-        fclose($tmpHandle);
-        @unlink($tmp);
-        flock($lockHandle, LOCK_UN);
-        fclose($lockHandle);
-        return false;
-    }
-
-    fflush($tmpHandle);
-    fclose($tmpHandle);
-
-    if (!@rename($tmp, $target)) {
-        @unlink($tmp);
-        flock($lockHandle, LOCK_UN);
-        fclose($lockHandle);
-        return false;
-    }
-
-    flock($lockHandle, LOCK_UN);
-    fclose($lockHandle);
-
-    return true;
-}
-
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
@@ -124,7 +74,7 @@ if ($payload === false) {
 try {
     $data = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
 } catch (JsonException $exception) {
-    log_app_error('save-content: invalid JSON payload (' . $exception->getCode() . ')');
+    log_app_error('save-content: invalid JSON payload tenant=' . $tenantId . ' (' . $exception->getCode() . ')');
     http_response_code(400);
     echo json_encode(['ok' => false, 'error' => 'JSON inválido']);
     exit;
@@ -142,8 +92,8 @@ if (!validate_payload($data)) {
     exit;
 }
 
-if (!save_content_atomically($data)) {
-    log_app_error('save-content: failed to persist content JSON atomically');
+if (!save_content_file($data, $tenantId)) {
+    log_app_error('save-content: failed to persist content JSON atomically tenant=' . $tenantId);
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'No se pudo guardar']);
     exit;

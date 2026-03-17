@@ -15,14 +15,16 @@ function normalize_template_slug(string $slug): string
     return $slug;
 }
 
-function import_backups_dir(): string
+function import_backups_dir(?string $tenantId = null): string
 {
-    return dirname(__DIR__) . '/data/template-imports';
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+
+    return dirname(__DIR__) . '/data/template-imports/' . $tenantId;
 }
 
-function save_html_backup(string $slug, string $html): ?string
+function save_html_backup(string $slug, string $html, ?string $tenantId = null): ?string
 {
-    $dir = import_backups_dir();
+    $dir = import_backups_dir($tenantId);
     if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
         return null;
     }
@@ -38,7 +40,7 @@ function save_html_backup(string $slug, string $html): ?string
     return $path;
 }
 
-function import_template_from_html(string $slug, string $html): array
+function import_template_from_html(string $slug, string $html, ?string $tenantId = null): array
 {
     $slug = normalize_template_slug($slug);
     if ($slug === '' || preg_match('/^[a-z0-9\-]+$/', $slug) !== 1) {
@@ -49,7 +51,9 @@ function import_template_from_html(string $slug, string $html): array
         throw new InvalidArgumentException('HTML vacío');
     }
 
-    $backupPath = save_html_backup($slug, $html);
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+
+    $backupPath = save_html_backup($slug, $html, $tenantId);
     if ($backupPath === null) {
         throw new RuntimeException('No se pudo guardar respaldo HTML');
     }
@@ -286,14 +290,14 @@ function import_template_from_html(string $slug, string $html): array
         throw new RuntimeException('No se pudo escribir el archivo de plantilla');
     }
 
-    if (!register_template_slug($slug)) {
+    if (!register_template_slug($slug, $tenantId)) {
         throw new RuntimeException('No se pudo registrar la plantilla');
     }
 
-    $existingContent = read_content_file();
+    $existingContent = read_content_file($tenantId);
     $mergedContent = array_replace_recursive($existingContent, $defaults);
-    if (!save_content_file($mergedContent)) {
-        throw new RuntimeException('No se pudo actualizar data/content.json');
+    if (!save_content_file($mergedContent, $tenantId)) {
+        throw new RuntimeException('No se pudo actualizar contenido del tenant');
     }
 
     return [
