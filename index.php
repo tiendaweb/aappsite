@@ -31,8 +31,10 @@ if ($tenantId === DEFAULT_TENANT_ID && !has_users($tenantId) && current_user($te
 }
 
 $isLoggedIn = current_user($tenantId) !== null;
-$content = read_content_file($tenantId);
-$activeTemplate = resolve_active_template($content, 'artistas', $tenantId);
+$storedTemplate = resolve_stored_template_slug($tenantId);
+$activeTemplate = resolve_active_template(['site' => ['template' => $storedTemplate]], 'artistas', $tenantId);
+$content = read_content_file($tenantId, $activeTemplate);
+$activeTemplate = resolve_active_template($content, $activeTemplate, $tenantId);
 $templateFile = template_index_path($activeTemplate);
 
 if ($templateFile === null) {
@@ -59,7 +61,7 @@ if ($headInjection !== '') {
 }
 
 if ($isLoggedIn) {
-    $bootstrap = '<script>window.APP_IS_AUTHENTICATED=true;window.APP_CONTENT_STATE=' . json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ';window.ADMIN_EDITOR_ENDPOINTS={saveContent:' . json_encode(url_for('/api/save-content.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ',uploadImage:' . json_encode(url_for('/api/upload-image.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ',listImages:' . json_encode(url_for('/api/list-images.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '};</script>';
+    $bootstrap = '<script>window.APP_IS_AUTHENTICATED=true;window.APP_ACTIVE_TEMPLATE=' . json_encode($activeTemplate, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ';window.APP_CONTENT_STATE=' . json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ';window.ADMIN_EDITOR_ENDPOINTS={saveContent:' . json_encode(url_for('/api/save-content.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ',uploadImage:' . json_encode(url_for('/api/upload-image.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ',listImages:' . json_encode(url_for('/api/list-images.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '};</script>';
     $editorScript = '<script src="' . esc(url_for('/public/js/admin-editor.js')) . '"></script>';
     $injection = $bootstrap . "\n" . $editorScript;
 

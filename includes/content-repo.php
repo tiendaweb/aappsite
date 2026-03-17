@@ -74,6 +74,34 @@ function infer_template_slug_from_content(array $data): ?string
     return is_string($configured) ? normalize_template_slug($configured) : null;
 }
 
+function resolve_stored_template_slug(?string $tenantId = null): ?string
+{
+    $tenantId = sanitize_tenant_id($tenantId ?? resolve_tenant_id());
+    run_initial_tenant_migration($tenantId);
+
+    $legacyPath = content_file_path($tenantId);
+    if (is_file($legacyPath)) {
+        $legacySlug = infer_template_slug_from_content(decode_content_file($legacyPath));
+        if ($legacySlug !== null) {
+            return $legacySlug;
+        }
+    }
+
+    foreach (list_tenant_template_slugs($tenantId) as $templateSlug) {
+        $metaPath = template_meta_file_path($tenantId, $templateSlug);
+        if (!is_string($metaPath) || !is_file($metaPath)) {
+            continue;
+        }
+
+        $meta = json_decode(file_get_contents($metaPath) ?: '{}', true);
+        if (is_array($meta) && ($meta['active'] ?? false) === true) {
+            return $templateSlug;
+        }
+    }
+
+    return null;
+}
+
 function list_tenant_template_slugs(string $tenantId): array
 {
     $templatesRoot = tenant_data_dir($tenantId) . '/templates';

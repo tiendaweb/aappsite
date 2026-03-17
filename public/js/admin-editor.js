@@ -24,6 +24,7 @@
     if (!isAuthenticated) return;
 
     const contentState = window.APP_CONTENT_STATE || {};
+    const activeTemplate = typeof window.APP_ACTIVE_TEMPLATE === 'string' ? window.APP_ACTIVE_TEMPLATE : '';
     const endpoints = window.ADMIN_EDITOR_ENDPOINTS || {};
     let editMode = false;
 
@@ -44,9 +45,12 @@
 
     async function persistContent() {
         if (!endpoints.saveContent) throw new Error('Endpoint de guardado no configurado.');
+        const headers = { 'Content-Type': 'application/json' };
+        if (activeTemplate) headers['X-Active-Template'] = activeTemplate;
+
         const response = await fetch(endpoints.saveContent, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(contentState),
         });
         const result = await response.json();

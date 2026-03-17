@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/content-repo.php';
 require_once __DIR__ . '/../includes/tenant.php';
+require_once __DIR__ . '/../includes/template-manager.php';
 
 $tenantId = resolve_tenant_id();
 require_tenant_admin($tenantId);
@@ -92,7 +93,10 @@ if (!validate_payload($data)) {
     exit;
 }
 
-if (!save_content_file($data, $tenantId)) {
+$storedTemplate = resolve_stored_template_slug($tenantId);
+$activeTemplate = resolve_active_template($data, $storedTemplate ?? 'artistas', $tenantId);
+
+if (!save_content_file($data, $tenantId, $activeTemplate)) {
     log_app_error('save-content: failed to persist content JSON atomically tenant=' . $tenantId);
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'No se pudo guardar']);
