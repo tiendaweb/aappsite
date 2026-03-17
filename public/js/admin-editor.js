@@ -256,7 +256,7 @@
                 </div>
                 <div data-modal-pane="url" class="space-y-2">
                     <label class="text-xs block">URL</label>
-                    <input id="adminEditorModalUrl" type="url" class="w-full rounded bg-white/5 border border-white/20 px-3 py-2 outline-none focus:border-cyan-300" placeholder="https://...">
+                    <input id="adminEditorModalUrl" type="text" class="w-full rounded bg-white/5 border border-white/20 px-3 py-2 outline-none focus:border-cyan-300" placeholder="https://..., mailto:..., #seccion">
                 </div>
                 <div data-modal-pane="upload" class="hidden space-y-2">
                     <label class="text-xs block">Archivo (jpg/png/webp, máx 5MB)</label>

@@ -353,7 +353,7 @@ $googleAnalyticsId = admin_content_get($content, 'site.integrations.google_analy
             <aside class="w-full md:w-64 lg:w-72 border-b md:border-b-0 md:border-r border-white/10 flex flex-col bg-black/20 backdrop-blur-md flex-shrink-0">
                 <div class="p-6 md:p-8 flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.4)]">
-                        <i class="ph ph-drop text-xl text-white"></i>
+                        <i class="ph ph-gear-six text-xl text-white"></i>
                     </div>
                     <div>
                         <h2 class="font-bold text-lg tracking-tight text-white leading-none">AAPP SPACE</h2>
@@ -592,7 +592,25 @@ $googleAnalyticsId = admin_content_get($content, 'site.integrations.google_analy
                                 </div>
                             </section>
 
-                            <!-- Editor HTML Avanzado -->
+                            <section class="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden">
+                                <header class="flex items-center gap-3 mb-6">
+                                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-300">
+                                        <i class="ph ph-images-square text-xl"></i>
+                                    </div>
+                                    <h2 class="text-xl font-semibold text-white">Galería de Imágenes</h2>
+                                </header>
+                                <p class="text-sm text-slate-400 mb-4">Subí archivos, previsualizá y copiá enlaces públicos para usar en enlaces o contenido.</p>
+                                <div class="space-y-4">
+                                    <div class="flex flex-col sm:flex-row gap-3 sm:items-center">
+                                        <input id="gallery-upload-input" type="file" accept="image/png,image/jpeg,image/webp" class="w-full sm:flex-1 glass-input rounded-xl px-4 py-2.5 text-sm">
+                                        <button id="gallery-upload-btn" type="button" class="rounded-xl bg-blue-400 text-black font-semibold px-5 py-2.5 transition-all">Subir imagen</button>
+                                    </div>
+                                    <p id="gallery-status" class="text-xs text-slate-400"></p>
+                                    <div id="gallery-grid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3"></div>
+                                </div>
+                            </section>
+
+                            <?php /* Herramienta para dev: dejar desactivada por defecto
                             <section class="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden">
                                 <header class="flex items-center gap-3 mb-6">
                                     <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
@@ -609,6 +627,7 @@ $googleAnalyticsId = admin_content_get($content, 'site.integrations.google_analy
                                     </div>
                                 </form>
                             </section>
+                            */ ?>
                         </div>
 
                         <!-- TAB: SECURITY -->
@@ -680,42 +699,107 @@ $googleAnalyticsId = admin_content_get($content, 'site.integrations.google_analy
             });
         });
 
-        // FORM IMPORT LOGIC
-        const importForm = document.getElementById('import-template-form');
-        const importSubmit = document.getElementById('import-template-submit');
-        const importStatus = document.getElementById('import-template-status');
+        const galleryGrid = document.getElementById('gallery-grid');
+        const galleryStatus = document.getElementById('gallery-status');
+        const galleryUploadInput = document.getElementById('gallery-upload-input');
+        const galleryUploadBtn = document.getElementById('gallery-upload-btn');
 
-        if (importForm) {
-            importForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                importStatus.innerText = 'Procesando...';
-                importSubmit.disabled = true;
+        function setGalleryStatus(message, isError = false) {
+            if (!galleryStatus) return;
+            galleryStatus.innerText = message;
+            galleryStatus.classList.toggle('text-rose-300', isError);
+            galleryStatus.classList.toggle('text-slate-400', !isError);
+        }
 
-                const formData = new FormData(importForm);
-                const payload = {
-                    slug: formData.get('import_slug'),
-                    html: formData.get('import_html')
-                };
+        function renderGallery(images) {
+            if (!galleryGrid) return;
+            galleryGrid.innerHTML = '';
+
+            if (!images.length) {
+                setGalleryStatus('No hay imágenes en la galería todavía.');
+                return;
+            }
+
+            images.forEach((item) => {
+                const card = document.createElement('article');
+                card.className = 'rounded-xl border border-white/10 bg-black/20 overflow-hidden';
+                card.innerHTML = `
+                    <img src="${item.url}" alt="${item.name || 'Imagen'}" class="w-full h-28 object-cover">
+                    <div class="p-3 space-y-2">
+                        <p class="text-xs text-slate-300 truncate" title="${item.name || ''}">${item.name || 'archivo'}</p>
+                        <div class="flex gap-2">
+                            <a href="${item.url}" target="_blank" rel="noopener" class="flex-1 text-center text-xs rounded-lg border border-white/20 px-2 py-1.5 hover:border-cyan-300">Ver</a>
+                            <button type="button" data-copy-url="${item.url}" class="flex-1 text-xs rounded-lg bg-cyan-400 text-black font-semibold px-2 py-1.5">Copiar link</button>
+                        </div>
+                    </div>
+                `;
+                galleryGrid.appendChild(card);
+            });
+
+            galleryGrid.querySelectorAll('[data-copy-url]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const url = btn.getAttribute('data-copy-url') || '';
+                    if (!url) return;
+                    try {
+                        await navigator.clipboard.writeText(url);
+                        setGalleryStatus('Enlace copiado al portapapeles.');
+                    } catch (error) {
+                        setGalleryStatus('No se pudo copiar automáticamente. Copiá manualmente: ' + url, true);
+                    }
+                });
+            });
+        }
+
+        async function loadGallery() {
+            if (!galleryGrid) return;
+            setGalleryStatus('Cargando galería...');
+            try {
+                const response = await fetch('<?= htmlspecialchars(url_for('/api/list-images.php')) ?>');
+                const result = await response.json();
+                if (!response.ok || !result.ok) {
+                    throw new Error(result.error || 'No se pudo cargar la galería');
+                }
+                renderGallery(Array.isArray(result.images) ? result.images : []);
+            } catch (error) {
+                setGalleryStatus('Error cargando galería: ' + error.message, true);
+            }
+        }
+
+        if (galleryUploadBtn && galleryUploadInput) {
+            galleryUploadBtn.addEventListener('click', async () => {
+                const file = galleryUploadInput.files && galleryUploadInput.files[0];
+                if (!file) {
+                    setGalleryStatus('Seleccioná un archivo para subir.', true);
+                    return;
+                }
+
+                galleryUploadBtn.disabled = true;
+                setGalleryStatus('Subiendo imagen...');
+                const formData = new FormData();
+                formData.append('key', 'site.assets.gallery_upload');
+                formData.append('image', file);
 
                 try {
-                    const res = await fetch('<?= htmlspecialchars(url_for('/api/import-template.php')) ?>', {
+                    const response = await fetch('<?= htmlspecialchars(url_for('/api/upload-image.php')) ?>', {
                         method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(payload)
+                        body: formData,
                     });
-                    const data = await res.json();
-                    if(data.ok) {
-                        importStatus.innerText = 'Éxito!';
-                        setTimeout(() => window.location.reload(), 1000);
-                    } else {
-                        throw new Error(data.error);
+                    const result = await response.json();
+                    if (!response.ok || !result.ok) {
+                        throw new Error(result.error || 'No se pudo subir');
                     }
-                } catch (err) {
-                    importStatus.innerText = 'Error: ' + err.message;
-                    importSubmit.disabled = false;
+                    galleryUploadInput.value = '';
+                    setGalleryStatus('Imagen subida correctamente.');
+                    await loadGallery();
+                } catch (error) {
+                    setGalleryStatus('Error subiendo imagen: ' + error.message, true);
+                } finally {
+                    galleryUploadBtn.disabled = false;
                 }
             });
         }
+
+        loadGallery();
     </script>
 </body>
 </html>

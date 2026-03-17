@@ -204,7 +204,7 @@ $isAdminPreview = current_user() !== null;
         }
     </style>
 </head>
-<body class="antialiased selection:bg-yellow-500 selection:text-black">
+<body class="antialiased selection:bg-yellow-500 selection:text-black" data-auth="<?= $isAdminPreview ? '1' : '0' ?>">
 
     <div class="bg-overlay"></div>
 
@@ -505,5 +505,16 @@ $isAdminPreview = current_user() !== null;
             });
         });
     </script>
+
+    <script>
+    window.APP_IS_AUTHENTICATED = document.body.dataset.auth === '1';
+    window.APP_CONTENT_STATE = <?= json_encode($initialContent, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    window.ADMIN_EDITOR_ENDPOINTS = {
+        saveContent: <?= json_encode(url_for('/api/save-content.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+        uploadImage: <?= json_encode(url_for('/api/upload-image.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+        listImages: <?= json_encode(url_for('/api/list-images.php'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+    };
+    </script>
+    <script src="<?= esc(url_for('/public/js/admin-editor.js')) ?>"></script>
 </body>
 </html>
