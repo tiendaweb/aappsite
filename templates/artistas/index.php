@@ -170,9 +170,19 @@ $initialContent = array_replace_recursive($defaults, $content);
     </div>
 
     <div id="mercado" class="tab-content">
-        <div class="glass p-12 rounded-[3rem] text-center space-y-6">
-            <h2 class="font-serif text-5xl"><span data-edit-key="tabs.mercado.title_prefix" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.mercado.title_prefix', '')) ?></span> <span class="italic" data-edit-key="tabs.mercado.title_highlight" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.mercado.title_highlight', '')) ?></span></h2>
-            <p class="max-w-2xl mx-auto opacity-70" data-edit-key="tabs.mercado.description" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.mercado.description', '')) ?></p>
+        <h2 class="font-serif text-4xl mb-12"><span data-edit-key="tabs.mercado.title_prefix" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.mercado.title_prefix', '')) ?></span> <span class="italic" data-edit-key="tabs.mercado.title_highlight" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.mercado.title_highlight', '')) ?></span></h2>
+        <p class="max-w-2xl opacity-70 mb-10" data-edit-key="tabs.mercado.description" data-edit-type="text"><?= esc(content_get($initialContent, 'tabs.mercado.description', '')) ?></p>
+        <div class="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+            <?php foreach ($obrasItems as $i => $item): ?>
+                <div class="glass p-4 rounded-3xl break-inside-avoid editable-wrapper">
+                    <img src="<?= esc(resolve_image_url($item['image'] ?? [])) ?>" data-edit-key="tabs.obras.items[<?= $i ?>].image" data-edit-type="image" data-source-type="<?= esc(resolve_image_source_type($item['image'] ?? [])) ?>" class="rounded-2xl h-full w-auto mb-4" alt="<?= esc($item['alt'] ?? '') ?>">
+                    <span class="edit-icon" data-edit-target="tabs.obras.items[<?= $i ?>].image">✎</span>
+                    <h3 class="font-serif text-xl" data-edit-key="tabs.obras.items[<?= $i ?>].title" data-edit-type="text"><?= esc($item['title'] ?? '') ?></h3>
+                    <p class="text-xs text-art-neon mb-2" data-edit-key="tabs.obras.items[<?= $i ?>].subtitle" data-edit-type="text"><?= esc($item['subtitle'] ?? '') ?></p>
+                    <p class="text-sm opacity-60" data-edit-key="tabs.obras.items[<?= $i ?>].description" data-edit-type="text"><?= esc($item['description'] ?? '') ?></p>
+                    <span class="field-message" data-message-for="tabs.obras.items[<?= $i ?>].title"></span>
+                </div>
+            <?php endforeach; ?>
         </div>
     </div>
 
